@@ -1,0 +1,18 @@
+.app-layout{display:flex;min-height:100vh;background:var(--bg)}
+.app-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.app-content{
+  flex:1;padding:26px 28px;overflow-y:auto;
+  animation:fadeUp var(--t3s) var(--e) both;
+  background:
+    radial-gradient(ellipse 700px 500px at 5% 5%,rgba(200,168,112,.06) 0%,transparent 55%),
+    radial-gradient(ellipse 500px 400px at 95% 95%,rgba(124,92,58,.04) 0%,transparent 55%),
+    var(--bg);
+  position:relative;
+}
+.app-content::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(rgba(200,168,112,.04) 1px,transparent 1px);
+  background-size:30px 30px;pointer-events:none;z-index:0;opacity:.6;
+}
+.app-content>*{position:relative;z-index:1}
+@media(max-width:768px){.app-content{padding:16px 14px}}

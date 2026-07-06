@@ -1,0 +1,20 @@
+.theft-info-card{
+  border-left:3px solid var(--p);
+  background:var(--pf);
+  border-top:1px solid var(--b2);border-right:1px solid var(--b2);border-bottom:1px solid var(--b2);
+}
+.verify-list{display:flex;flex-direction:column;margin-top:6px}
+.verify-row{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr 2fr;
+  gap:7px;padding:10px 13px;align-items:center;
+  border-bottom:1px solid var(--b1);
+  font-size:13.5px;color:var(--t2);
+  transition:background var(--t) var(--e);
+}
+.verify-row:last-child{border-bottom:none}
+.verify-row:hover{background:var(--bgch)}
+.verify-row--alert{background:var(--errb)!important}
+.verify-row--alert:hover{background:rgba(196,122,106,.14)!important}
+.verify-row__name{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.verify-row__name strong{color:var(--t1);font-size:13.5px;font-weight:600}
+@media(max-width:768px){.verify-row{grid-template-columns:1fr 1fr;gap:9px}}
