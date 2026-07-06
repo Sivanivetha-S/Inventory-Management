@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { discountAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import { FiPlus, FiEdit2, FiTrash2, FiPercent, FiX, FiToggleLeft, FiToggleRight } from 'react-icons/fi'
+import './Discounts.css'
 
 const EMPTY_FORM = { name: '', percentage: '', minimumPurchaseAmount: '', description: '', active: true }
 

@@ -1,73 +1,218 @@
-.sidebar{
-  background:var(--bg2);border-right:1px solid var(--b1);
-  display:flex;flex-direction:column;
-  transition:width .28s var(--e);
-  overflow:hidden;flex-shrink:0;position:relative;z-index:100;
+/*
+  SIDEBAR — Light & Fruity
+  ─────────────────────────────────────────
+  Body       : --sage      #E0E8E2
+  Active link: --coral     #FFA384
+  Logo / CTA : --burg      #7A3C3A
+  Surface    : --snow      #F3F3F3
+  ─────────────────────────────────────────
+*/
+
+/* ── Shell ── */
+.sidebar {
+  background: var(--sage);
+  border-right: 1.5px solid var(--sage-dk);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+  transition: width var(--t-md) var(--ease);
+  box-shadow: 2px 0 12px rgba(122,60,58,.07);
 }
-.sidebar--open{width:248px}.sidebar--closed{width:60px}
-.sidebar__header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 12px;border-bottom:1px solid var(--b1);min-height:62px;
+.sidebar--open   { width: 248px; }
+.sidebar--closed { width: 64px;  }
+
+/* ── Header strip ── */
+.sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 14px;
+  min-height: 66px;
+  background: var(--burg);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-display);
 }
-.sidebar__brand{display:flex;align-items:center;gap:10px;overflow:hidden;flex:1}
-.sidebar__logo{
-  width:34px;height:34px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--pd),var(--p));
-  border-radius:var(--r1);display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:13px;color:#1a0e05;
-  transition:transform var(--t) var(--e);
+/* Wave accent on header */
+.sidebar__header::after {
+  content: '';
+  position: absolute;
+  bottom: -14px; left: -10%;
+  width: 120%; height: 28px;
+  background: var(--sage);
+  border-radius: 50%;
 }
-.sidebar__logo:hover{transform:scale(1.08) rotate(4deg)}
-.sidebar__brand-name{font-size:14px;font-weight:700;color:var(--t1);white-space:nowrap;letter-spacing:-.2px}
-.sidebar__brand-sub{font-size:10.5px;color:var(--t3);white-space:nowrap}
-.sidebar__toggle{
-  width:26px;height:26px;flex-shrink:0;border-radius:6px;
-  border:1px solid var(--b1);background:transparent;color:var(--t3);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all var(--t) var(--e);
+
+.sidebar__brand { display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1; }
+
+/* Logo mark — coral on burg bg */
+.sidebar__logo {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--coral);
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900; font-size: 14px; color: #fff;
+  letter-spacing: -.5px;
+  transition: transform var(--t-sm) var(--spring), background var(--t-sm) var(--ease);
+  box-shadow: 0 2px 8px rgba(255,163,132,.4);
 }
-.sidebar__toggle:hover{background:var(--pf);color:var(--pl);border-color:var(--b2)}
-.sidebar__admin{
-  display:flex;align-items:center;gap:9px;padding:12px;
-  border-bottom:1px solid var(--b1);overflow:hidden;
+.sidebar__logo:hover { transform: scale(1.1) rotate(6deg); background: var(--coral-dk); }
+
+.sidebar__brand-name {
+  font-family: var(--font-display);
+  font-size: 14.5px; font-weight: 800;
+  color: #fff; white-space: nowrap; letter-spacing: -.3px;
+  overflow: hidden; text-overflow: ellipsis;
 }
-.sidebar__avatar{
-  width:34px;height:34px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--pd),var(--p));
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:13px;color:#1a0e05;
+.sidebar__brand-sub {
+  font-size: 10px; color: rgba(255,255,255,.55);
+  white-space: nowrap;
 }
-.sidebar__admin-name{font-size:12.5px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sidebar__admin-shop{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sidebar__nav{flex:1;padding:8px 6px;overflow-y:auto;overflow-x:hidden}
-.sidebar__link{
-  display:flex;align-items:center;gap:9px;
-  padding:9px 10px;border-radius:var(--r1);
-  color:var(--t3);text-decoration:none;
-  margin-bottom:2px;white-space:nowrap;overflow:hidden;
-  transition:background var(--t) var(--e),color var(--t) var(--e),transform var(--t) var(--e);
+
+/* Collapse toggle */
+.sidebar__toggle {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.75);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all var(--t-sm) var(--ease);
 }
-.sidebar__link:hover{background:var(--pf);color:var(--pl);transform:translateX(3px)}
-.sidebar__link--active{
-  background:linear-gradient(135deg,var(--pd),var(--p));
-  color:#1a0e05!important;
+.sidebar__toggle:hover { background: var(--coral); color: #fff; border-color: var(--coral); }
+
+/* ── Admin strip ── */
+.sidebar__admin {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px;
+  background: rgba(255,255,255,.55);
+  border-bottom: 1px solid var(--sage-dk);
+  overflow: hidden;
+  margin-top: 8px;  /* space below the wave */
 }
-.sidebar__link--active:hover{transform:none}
-.sidebar__link-icon{font-size:15px;flex-shrink:0}
-.sidebar__link-label{font-size:13px;font-weight:500;flex:1}
-.sidebar__link-dot{display:none}
-.sidebar__link--active .sidebar__link-dot{
-  display:block;width:5px;height:5px;
-  background:rgba(26,14,5,.55);border-radius:50%;
+
+.sidebar__avatar {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: var(--coral);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff;
+  border: 2.5px solid var(--sage-dk);
+  transition: transform var(--t-sm) var(--spring);
 }
-.sidebar__footer{padding:8px 6px;border-top:1px solid var(--b1)}
-.sidebar__logout{
-  display:flex;align-items:center;gap:9px;padding:9px 10px;
-  border-radius:var(--r1);background:transparent;border:none;
-  color:var(--err);width:100%;cursor:pointer;
-  font-size:13px;font-weight:500;font-family:inherit;white-space:nowrap;
-  transition:all var(--t) var(--e);
+.sidebar__admin:hover .sidebar__avatar { transform: scale(1.08); }
+
+.sidebar__admin-name {
+  font-size: 13px; font-weight: 600;
+  color: var(--burg); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
-.sidebar__logout:hover{background:var(--errb);transform:translateX(3px)}
-.sidebar__logout svg{font-size:15px;flex-shrink:0}
-@media(max-width:768px){.sidebar--open{width:100vw;position:fixed;height:100vh}}
+.sidebar__admin-shop {
+  font-size: 11px; color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Nav ── */
+.sidebar__nav {
+  flex: 1; padding: 10px 8px;
+  overflow-y: auto; overflow-x: hidden;
+  background: var(--sage);
+}
+
+/* Nav section label */
+.sidebar__nav-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--burg-lt);
+  padding: 10px 10px 5px;
+  opacity: .7;
+  white-space: nowrap; overflow: hidden;
+}
+
+/* Nav link */
+.sidebar__link {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 11px; border-radius: var(--r-md);
+  color: var(--burg-lt); text-decoration: none;
+  margin-bottom: 3px; white-space: nowrap; overflow: hidden;
+  position: relative;
+  transition: background var(--t-sm) var(--ease),
+              color var(--t-sm) var(--ease),
+              transform var(--t-sm) var(--spring);
+}
+.sidebar__link::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 3px; border-radius: var(--r-pill);
+  background: var(--coral);
+  transform: scaleY(0);
+  transition: transform var(--t-sm) var(--spring);
+}
+.sidebar__link:hover {
+  background: rgba(255,163,132,.12);
+  color: var(--burg);
+  transform: translateX(3px);
+}
+.sidebar__link:hover::before { transform: scaleY(1); }
+
+/* Active state */
+.sidebar__link--active {
+  background: var(--coral);
+  color: #fff !important;
+  box-shadow: 0 3px 12px rgba(255,163,132,.38);
+  transform: none !important;
+}
+.sidebar__link--active::before { display: none; }
+.sidebar__link--active:hover { background: var(--coral-dk); transform: none !important; }
+
+.sidebar__link-icon {
+  font-size: 16px; flex-shrink: 0;
+  transition: transform var(--t-sm) var(--spring);
+}
+.sidebar__link:hover .sidebar__link-icon { transform: scale(1.15); }
+.sidebar__link--active .sidebar__link-icon { transform: none; }
+
+.sidebar__link-label { font-size: 13.5px; font-weight: 500; flex: 1; }
+
+/* Active dot */
+.sidebar__link-dot { display: none; }
+.sidebar__link--active .sidebar__link-dot {
+  display: block; width: 5px; height: 5px;
+  background: rgba(255,255,255,.7); border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── Footer / logout ── */
+.sidebar__footer {
+  padding: 10px 8px;
+  border-top: 1px solid var(--sage-dk);
+  background: var(--sage);
+}
+
+.sidebar__logout {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 11px; border-radius: var(--r-md);
+  background: transparent; border: none;
+  color: var(--burg-lt); width: 100%; cursor: pointer;
+  font-size: 13.5px; font-weight: 500; font-family: inherit;
+  white-space: nowrap;
+  transition: background var(--t-sm) var(--ease), color var(--t-sm) var(--ease),
+              transform var(--t-sm) var(--spring);
+}
+.sidebar__logout:hover {
+  background: var(--errb); color: var(--err);
+  transform: translateX(3px);
+}
+.sidebar__logout svg { font-size: 16px; flex-shrink: 0; }
+
+/* ── Mobile overlay ── */
+@media (max-width: 768px) {
+  .sidebar--open {
+    width: 100vw; position: fixed; height: 100vh;
+    box-shadow: var(--sh-4);
+  }
+}

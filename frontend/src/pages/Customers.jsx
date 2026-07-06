@@ -5,6 +5,7 @@ import {
   FiPlus, FiEdit2, FiTrash2, FiSearch, FiUsers,
   FiX, FiMail, FiPhone, FiMapPin, FiCheckCircle, FiClock
 } from 'react-icons/fi'
+import './Customers.css'
 
 const EMPTY_FORM = { name: '', email: '', phoneNumber: '', address: '' }
 

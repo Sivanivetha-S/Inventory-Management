@@ -1,0 +1,92 @@
+/*
+  DISCOUNTS PAGE — Light & Fruity
+  Replaces gold inline stat cards with proper themed cards
+  Improves discount card layout and badge visibility
+*/
+
+/* ── Override gold gradient stat cards to themed palette ── */
+/* These selectors target the exact inline style strings from Discounts.jsx */
+[style*="linear-gradient(135deg,#a07840,#c8a870)"] { background: var(--coral)    !important; border-radius: var(--r-lg) !important; }
+[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] { background: var(--burg)     !important; border-radius: var(--r-lg) !important; }
+[style*="linear-gradient(135deg,#8b6030,#c8a870)"] { background: #4a7a9a         !important; border-radius: var(--r-lg) !important; }
+
+/* Force readable text inside those override cards */
+[style*="linear-gradient(135deg,#a07840,#c8a870)"] p,
+[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] p,
+[style*="linear-gradient(135deg,#8b6030,#c8a870)"] p { color: rgba(255,255,255,.82) !important; }
+
+[style*="linear-gradient(135deg,#a07840,#c8a870)"] h3,
+[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] h3,
+[style*="linear-gradient(135deg,#8b6030,#c8a870)"] h3 { color: #fff !important; }
+
+/* ── Discount card polish ── */
+.discount-card {
+  background: var(--surface) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--sh-1) !important;
+  transition: box-shadow var(--t-md) var(--ease), transform var(--t-md) var(--ease), border-color var(--t-sm) var(--ease) !important;
+  overflow: hidden;
+  position: relative;
+}
+.discount-card:hover {
+  box-shadow: var(--sh-3) !important;
+  transform: translateY(-3px) !important;
+  border-color: var(--coral) !important;
+}
+
+/* Active card — coral left accent */
+.discount-card[style*="var(--primary)"] { border-left: 4px solid var(--coral) !important; }
+/* Inactive card — sage left accent */
+.discount-card[style*="#d1d5db"]        { border-left: 4px solid var(--sage-dk) !important; }
+.discount-card[style*="opacity: 0.7"],
+.discount-card[style*="opacity:0.7"]    { opacity: .75 !important; }
+
+/* Card name heading */
+.discount-card h3[style*="color:'var(--dark)'"],
+.discount-card h3[style*="color:var(--dark)"],
+.discount-card h3 { color: var(--burg) !important; font-size: 15px !important; font-weight: 700 !important; font-family: var(--font-display) !important; }
+
+/* Card description */
+.discount-card p[style*="color:'var(--gray)'"],
+.discount-card p[style*="color:var(--gray)"],
+.discount-card p  { color: #7a4a48 !important; font-size: 13px !important; }
+
+/* Percentage pill — override var(--gradient-primary) → flat coral */
+.discount-card [style*="background:'var(--gradient-primary)'"],
+.discount-card [style*="background:var(--gradient-primary)"],
+.discount-card [style*="background: var(--gradient-primary)"] {
+  background: var(--coral) !important;
+  border-radius: var(--r-pill) !important;
+  box-shadow: 0 2px 8px rgba(255,163,132,.35) !important;
+}
+.discount-card [style*="background:var(--gradient-primary)"] span,
+.discount-card [style*="background: var(--gradient-primary)"] span,
+.discount-card [style*="background:'var(--gradient-primary)'"] span { color: #fff !important; }
+
+/* Toggle active/inactive button text */
+.discount-card [style*="color: '#22c55e'"],
+.discount-card [style*="color:'#22c55e'"],
+.discount-card [style*="color:#22c55e"] { color: var(--ok) !important; }
+.discount-card [style*="color: '#9ca3af'"],
+.discount-card [style*="color:'#9ca3af'"],
+.discount-card [style*="color:#9ca3af"] { color: var(--text-3) !important; }
+
+/* Min purchase pill — purple → coral-lt with burg text */
+.discount-card [style*="background:'#ede9fe'"],
+.discount-card [style*="background:#ede9fe"] {
+  background: var(--coral-lt) !important;
+  color: var(--burg) !important;
+  border-radius: var(--r-pill) !important;
+}
+/* No-minimum pill — green → sage with ok text */
+.discount-card [style*="background:'#dcfce7'"],
+.discount-card [style*="background:#dcfce7"] {
+  background: rgba(46,125,90,.1) !important;
+  color: var(--ok) !important;
+  border-radius: var(--r-pill) !important;
+}
+
+/* Created date */
+.discount-card [style*="color:'var(--gray)'"],
+.discount-card [style*="color:var(--gray)"] { color: var(--text-3) !important; }

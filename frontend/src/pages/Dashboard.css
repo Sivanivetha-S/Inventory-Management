@@ -1,39 +1,156 @@
-.dashboard{display:flex;flex-direction:column;gap:20px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.stat-card{
-  border-radius:var(--r3);padding:18px 16px;
-  display:flex;align-items:center;gap:13px;
-  box-shadow:var(--s1);cursor:default;
-  position:relative;overflow:hidden;
-  transition:transform var(--t2s) var(--e),box-shadow var(--t2s) var(--e);
+/*
+  DASHBOARD — Light & Fruity
+  Stat cards use tone-based CSS classes (not inline styles)
+  Charts and panels sit on white surfaces with sage borders
+*/
+
+.dashboard { display: flex; flex-direction: column; gap: 22px; }
+
+/* ── Stat grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
 }
-.stat-card::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(255,245,220,.09) 0%,transparent 60%);
-  pointer-events:none;
+
+.stat-card {
+  border-radius: var(--r-lg);
+  padding: 22px 20px;
+  display: flex; align-items: center; gap: 16px;
+  position: relative; overflow: hidden;
+  cursor: default;
+  border: none;
+  box-shadow: var(--sh-2);
+  transition: transform var(--t-md) var(--spring), box-shadow var(--t-md) var(--ease);
+  animation: fadeUp var(--t-lg) var(--ease) both;
+  /* default fallback */
+  background: var(--burg);
 }
-.stat-card:hover{transform:translateY(-4px);box-shadow:var(--s3)}
-.stat-card:active{transform:translateY(-1px)}
-.stat-card__icon{
-  width:44px;height:44px;flex-shrink:0;border-radius:12px;
-  background:rgba(26,14,5,.25);
-  display:flex;align-items:center;justify-content:center;font-size:21px;
-  transition:transform var(--t2s) var(--e);
+
+/* ── Tone variants ── */
+.stat-card--products  { background: #7A3C3A; }   /* burg */
+.stat-card--customers { background: #FFA384; }   /* coral */
+.stat-card--sales     { background: #c8603a; }   /* coral-dk */
+.stat-card--inventory { background: #5a8a6a; }   /* muted green */
+.stat-card--loss      { background: #b05050; }   /* muted red */
+.stat-card--revenue   { background: #4a7a9a; }   /* muted blue */
+
+.stat-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: var(--sh-4); }
+.stat-card:active { transform: translateY(-2px); }
+
+/* Decorative circle in corner */
+.stat-card::after {
+  content: '';
+  position: absolute; bottom: -18px; right: -18px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,.14);
+  transition: transform var(--t-md) var(--ease);
+  pointer-events: none;
 }
-.stat-card:hover .stat-card__icon{transform:scale(1.1) rotate(-5deg)}
-.stat-card__label{font-size:11px;color:rgba(255,245,220,.72);font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
-.stat-card__value{font-size:21px;font-weight:800;color:#fff9ee;line-height:1;letter-spacing:-.5px}
-.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.chart-card{
-  background:var(--bgc);border:1px solid var(--b1);border-radius:var(--r3);padding:20px;
-  transition:border-color var(--t2s) var(--e);
+.stat-card:hover::after { transform: scale(1.5); }
+
+/* Icon box */
+.stat-card__icon {
+  width: 48px; height: 48px; flex-shrink: 0;
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  transition: transform var(--t-md) var(--spring);
+  color: #fff;
 }
-.chart-card:hover{border-color:var(--b2)}
-.chart-title{font-size:13px;font-weight:600;color:var(--t2);margin-bottom:14px;letter-spacing:.2px}
-.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.section-header h3{font-size:13px;font-weight:600;color:var(--t2);letter-spacing:.2px}
-.empty-msg{color:var(--t3);font-size:13px;text-align:center;padding:24px 0}
-.theft-alert-section{border-color:var(--errr)!important;background:var(--errb)!important}
-@media(max-width:900px){.charts-row,.bottom-row{grid-template-columns:1fr}}
-@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card:hover .stat-card__icon { transform: rotate(-8deg) scale(1.12); }
+
+.stat-card__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.stat-card__label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .7px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.78) !important;
+  margin-bottom: 3px;
+}
+.stat-card__value {
+  font-size: 22px; font-weight: 900;
+  color: #fff !important; line-height: 1.1; letter-spacing: -.5px;
+  font-family: var(--font-display);
+}
+.stat-card__caption {
+  font-size: 11px; color: rgba(255,255,255,.62) !important;
+  margin-top: 2px; display: block;
+}
+
+/* ── Charts row ── */
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.chart-card {
+  background: var(--surface);
+  border: 1.5px solid var(--sage-dk);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  box-shadow: var(--sh-1);
+  transition: border-color var(--t-md) var(--ease), box-shadow var(--t-md) var(--ease),
+              transform var(--t-md) var(--ease);
+  animation: fadeUp var(--t-lg) var(--ease) both;
+}
+.chart-card:hover {
+  border-color: var(--coral);
+  box-shadow: var(--sh-3);
+  transform: translateY(-2px);
+}
+
+/* Coloured top accent bar */
+.chart-card::before {
+  content: '';
+  display: block; height: 3px; width: 40px;
+  background: var(--coral);
+  border-radius: var(--r-pill);
+  margin-bottom: 14px;
+  transition: width var(--t-md) var(--ease);
+}
+.chart-card:hover::before { width: 70px; }
+
+.chart-title {
+  font-size: 13.5px; font-weight: 700;
+  color: var(--burg); margin-bottom: 16px; letter-spacing: -.1px;
+  font-family: var(--font-display);
+}
+
+/* ── Bottom panels ── */
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-header h3 {
+  font-size: 13.5px; font-weight: 700;
+  color: var(--burg); letter-spacing: -.1px;
+  position: relative; padding-left: 12px;
+  font-family: var(--font-display);
+}
+.section-header h3::before {
+  content: '';
+  position: absolute; left: 0; top: 15%; bottom: 15%;
+  width: 3px; background: var(--coral);
+  border-radius: var(--r-pill);
+}
+
+.empty-msg { color: var(--text-3); font-size: 13px; text-align: center; padding: 28px 0; }
+
+/* ── Theft alert panel override ── */
+.theft-alert-section {
+  border-color: rgba(192,57,43,.35) !important;
+  background: #fff !important;
+}
+.theft-alert-section .section-header h3::before { background: var(--err); }
+/* Make missing-qty badge a strong red circle */
+.theft-alert-section .badge-danger {
+  min-width: 28px;
+  justify-content: center;
+  background: #c0392b !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+}
+
+@media (max-width: 900px) { .charts-row, .bottom-row { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }

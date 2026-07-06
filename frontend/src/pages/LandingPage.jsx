@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowRight, FiMail, FiPackage, FiUsers, FiShield, FiBarChart2, FiFileText, FiPercent } from 'react-icons/fi'
 import './LandingPage.css'
+import Chatbot from '../components/chatbot/Chatbot'
 
 /* scroll reveal */
 function useReveal() {
@@ -142,8 +143,7 @@ export default function LandingPage() {
       <ASection icon={FiBarChart2}label="Analytics Dashboard"  title="Everything at a glance, always"                      sub="Revenue charts, low-stock warnings, theft counters and recent bills on one page." items={DASHBOARD} />
 
       {/* ══ FOOTER ════════════════════════════════ */}
-      <div className="lp-footer">
-        <div className="lp-grid-overlay" />
+      <div className="lp-footer">        <div className="lp-grid-overlay" />
         <div style={{ position:'relative', zIndex:1 }}>
           <div className="lp-footer__logo lp-animate">SI</div>
           <h2 className="lp-footer__name lp-animate lp-delay-1">Smart Inventory</h2>
@@ -157,6 +157,8 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* ══ AI CHATBOT — floating assistant ══ */}
+      <Chatbot />
     </div>
   )
 }
