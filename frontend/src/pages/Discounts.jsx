@@ -111,15 +111,31 @@ export default function Discounts() {
       {/* Summary */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:16, marginBottom:24 }}>
         {[
-          { label:'Total Discounts',  value:discounts.length, color:'linear-gradient(135deg,#a07840,#c8a870)', icon:'🏷️' },
-          { label:'Active',           value:activeCount,       color:'linear-gradient(135deg,#7a5c2e,#b08050)', icon:'✅' },
-          { label:'Inactive',         value:inactiveCount,     color:'linear-gradient(135deg,#8b6030,#c8a870)', icon:'⏸️' },
+          { label:'Total Discounts', value:discounts.length, bg:'#FFA384', icon:'🏷️' },
+          { label:'Active',          value:activeCount,       bg:'#7A3C3A', icon:'✅' },
+          { label:'Inactive',        value:inactiveCount,     bg:'#c8603a', icon:'⏸️' },
         ].map(s => (
-          <div key={s.label} style={{ background:s.color, borderRadius:'var(--radius-lg)', padding:'20px 18px', boxShadow:'var(--shadow-md)', display:'flex', alignItems:'center', gap:14 }}>
-            <span style={{ fontSize:28 }}>{s.icon}</span>
+          <div key={s.label} style={{
+            background: s.bg,
+            borderRadius: 'var(--r-lg)',
+            padding: '22px 20px',
+            boxShadow: '0 4px 16px rgba(122,60,58,.18)',
+            display: 'flex', alignItems: 'center', gap: 16,
+            position: 'relative', overflow: 'hidden',
+            transition: 'transform .2s ease, box-shadow .2s ease',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 8px 24px rgba(122,60,58,.28)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)';   e.currentTarget.style.boxShadow='0 4px 16px rgba(122,60,58,.18)'; }}
+          >
+            {/* decorative circle */}
+            <div style={{ position:'absolute', bottom:-16, right:-16, width:72, height:72, borderRadius:'50%', background:'rgba(255,255,255,.12)', pointerEvents:'none' }} />
+            {/* icon box */}
+            <div style={{ width:46, height:46, flexShrink:0, borderRadius:12, background:'rgba(255,255,255,.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
+              {s.icon}
+            </div>
             <div>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.8)', fontWeight:600 }}>{s.label}</p>
-              <h3 style={{ fontSize:26, fontWeight:800, color:'white' }}>{s.value}</h3>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.78)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:4 }}>{s.label}</p>
+              <h3 style={{ fontSize:26, fontWeight:900, color:'#fff', lineHeight:1 }}>{s.value}</h3>
             </div>
           </div>
         ))}

@@ -472,18 +472,27 @@ export default function TheftDetection() {
           {/* Summary cards */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:16, marginBottom:20 }}>
             {[
-              { label:'Total Records', value:records.length,                                          color:'linear-gradient(135deg,#a07840,#c8a870)', icon:'📋' },
-              { label:'Total Loss',    value:`₹${totalLoss.toLocaleString('en-IN')}`,                 color:'linear-gradient(135deg,#6b4820,#b08050)', icon:'💸' },
-              { label:'Loss Detected', value:records.filter(r=>r.status==='DETECTED').length,         color:'linear-gradient(135deg,#7a3020,#c47a6a)',  icon:'🚨' },
-              { label:'Normal',        value:records.filter(r=>r.status==='NORMAL').length,           color:'linear-gradient(135deg,#3a6b45,#7dbb8a)',  icon:'✅' },
-              { label:'Resolved',      value:records.filter(r=>r.status==='RESOLVED').length,         color:'linear-gradient(135deg,#8b6030,#c8a870)',  icon:'🔒' },
+              { label:'Total Records', value:records.length,                                          bg:'#FFA384', icon:'📋' },
+              { label:'Total Loss',    value:`₹${totalLoss.toLocaleString('en-IN')}`,                 bg:'#7A3C3A', icon:'💸' },
+              { label:'Loss Detected', value:records.filter(r=>r.status==='DETECTED').length,         bg:'#c0392b', icon:'🚨' },
+              { label:'Normal',        value:records.filter(r=>r.status==='NORMAL').length,           bg:'#2e7d5a', icon:'✅' },
+              { label:'Resolved',      value:records.filter(r=>r.status==='RESOLVED').length,         bg:'#4a7a9a', icon:'🔒' },
             ].map(s => (
-              <div key={s.label} style={{ background:s.color, borderRadius:'var(--radius-lg)',
-                padding:'16px', boxShadow:'var(--shadow-md)', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:24 }}>{s.icon}</span>
+              <div key={s.label} style={{
+                background: s.bg, borderRadius:'var(--r-lg)',
+                padding:'18px 16px', boxShadow:'0 4px 16px rgba(122,60,58,.18)',
+                display:'flex', alignItems:'center', gap:14,
+                position:'relative', overflow:'hidden',
+                transition:'transform .2s ease, box-shadow .2s ease',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,.22)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)';   e.currentTarget.style.boxShadow='0 4px 16px rgba(122,60,58,.18)'; }}
+              >
+                <div style={{ position:'absolute', bottom:-14, right:-14, width:60, height:60, borderRadius:'50%', background:'rgba(255,255,255,.12)', pointerEvents:'none' }} />
+                <div style={{ width:42, height:42, flexShrink:0, borderRadius:10, background:'rgba(255,255,255,.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>{s.icon}</div>
                 <div>
-                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.8)', fontWeight:600 }}>{s.label}</p>
-                  <h3 style={{ fontSize:20, fontWeight:800, color:'white' }}>{s.value}</h3>
+                  <p style={{ fontSize:10.5, color:'rgba(255,255,255,.78)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:3 }}>{s.label}</p>
+                  <h3 style={{ fontSize:20, fontWeight:900, color:'#fff', lineHeight:1 }}>{s.value}</h3>
                 </div>
               </div>
             ))}
