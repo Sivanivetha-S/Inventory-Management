@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { productAPI } from '../services/api'
 import toast from 'react-hot-toast'
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiPackage, FiX } from 'react-icons/fi'
+import { Plus, Edit2, Trash2, Search, Package, X } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import './Products.css'
 
 const EMPTY_FORM = {
   name: '', category: '', purchasePrice: '', sellingPrice: '',
@@ -9,6 +11,7 @@ const EMPTY_FORM = {
 }
 
 export default function Products() {
+  const { role, activeBranchId } = useAuth()
   const [products, setProducts]   = useState([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
@@ -20,12 +23,13 @@ export default function Products() {
   const [deleteId, setDeleteId]   = useState(null)
 
   const load = useCallback(() => {
+    setProducts([])
     setLoading(true)
     productAPI.getAll()
       .then(r => setProducts(r.data.data))
       .catch(() => toast.error('Failed to load products'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeBranchId])
 
   useEffect(() => { load() }, [load])
 
@@ -120,32 +124,39 @@ export default function Products() {
         </div>
         <div style={{ display:'flex', gap:'12px', alignItems:'center' }}>
           <div className="search-bar">
-            <FiSearch style={{ color:'var(--gray)' }} />
+            <Search size={15} />
             <input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
-            {search && <button onClick={() => setSearch('')} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--gray)' }}><FiX /></button>}
+            {search && <button onClick={() => setSearch('')} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text-3)' }}><X size={14} /></button>}
           </div>
-          <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add Product</button>
+          {role === 'ADMIN' && <button className="btn btn-primary" onClick={openAdd}><Plus size={15} /> Add Product</button>}
         </div>
       </div>
 
       {loading
         ? <div className="loading-center"><div className="spinner" /></div>
         : filtered.length === 0
-          ? <div className="empty-state"><FiPackage size={48} /><h3>No products found</h3><p>Add your first product to get started</p></div>
+          ? <div className="empty-state"><Package size={48} /><h3>No products found</h3><p>Add your first product to get started</p></div>
           : <div className="table-container">
               <table>
                 <thead>
                   <tr>
                     <th>#</th><th>Name</th><th>Category</th>
                     <th>Purchase</th><th>Selling</th><th>Stock</th>
-                    <th>Min Alert</th><th>Status</th><th>Actions</th>
+                    <th>Min Alert</th><th>Status</th>{role === 'ADMIN' && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((p, i) => (
                     <tr key={p.id}>
                       <td>{i + 1}</td>
-                      <td><strong>{p.name}</strong></td>
+                      <td>
+                        <strong>{p.name}</strong>
+                        {p.branchName && (
+                          <div style={{ fontSize: 10, color: 'var(--primary-color)', marginTop: 2, fontWeight: 600 }}>
+                            🏢 {p.branchName}
+                          </div>
+                        )}
+                      </td>
                       <td><span className="badge badge-primary">{p.category}</span></td>
                       <td>₹{Number(p.purchasePrice).toLocaleString('en-IN')}</td>
                       <td>₹{Number(p.sellingPrice).toLocaleString('en-IN')}</td>
@@ -156,12 +167,14 @@ export default function Products() {
                           ? <span className="badge badge-danger">⚠ Low Stock</span>
                           : <span className="badge badge-success">✓ OK</span>}
                       </td>
-                      <td>
-                        <div style={{ display:'flex', gap:'6px' }}>
-                          <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Edit"><FiEdit2 /></button>
-                          <button className="btn-icon btn-icon-delete" onClick={() => setDeleteId(p.id)} title="Delete"><FiTrash2 /></button>
-                        </div>
-                      </td>
+                      {role === 'ADMIN' && (
+                        <td>
+                          <div style={{ display:'flex', gap:'6px' }}>
+                            <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Edit"><Edit2 size={14} /></button>
+                            <button className="btn-icon btn-icon-delete" onClick={() => setDeleteId(p.id)} title="Delete"><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -175,7 +188,7 @@ export default function Products() {
           <div className="modal-box">
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <h2 style={{ fontSize:20, fontWeight:700 }}>{editing ? 'Edit Product' : 'Add Product'}</h2>
-              <button className="btn-icon" style={{ background:'#f3f4f6', color:'#374151' }} onClick={() => setModalOpen(false)}><FiX /></button>
+              <button className="btn-icon" style={{ background:'var(--slate-50)', color:'var(--text-2)' }} onClick={() => setModalOpen(false)}><X size={16} /></button>
             </div>
             <form onSubmit={handleSave}>
               <div className="form-group">
@@ -213,7 +226,7 @@ export default function Products() {
               <div style={{ display:'flex', gap:12, justifyContent:'flex-end', marginTop:8 }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? <span className="btn-spinner" /> : (editing ? 'Update' : 'Add Product')}
+                {saving ? <span className="btn-spinner" /> : (editing ? 'Update' : 'Add Product')}
                 </button>
               </div>
             </form>
@@ -225,7 +238,7 @@ export default function Products() {
       {deleteId && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth:400, textAlign:'center' }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>🗑️</div>
+            <div style={{ fontSize:48, marginBottom:16 }}><Trash2 size={40} style={{ color:'var(--err)', margin:'0 auto' }} /></div>
             <h3 style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>Delete Product?</h3>
             <p style={{ color:'var(--gray)', marginBottom:24 }}>This action cannot be undone.</p>
             <div style={{ display:'flex', gap:12, justifyContent:'center' }}>

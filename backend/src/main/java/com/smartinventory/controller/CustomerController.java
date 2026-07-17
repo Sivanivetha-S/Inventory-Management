@@ -88,4 +88,16 @@ public class CustomerController {
             @RequestParam String q) {
         return ResponseEntity.ok(customerService.searchCustomers(q));
     }
+
+    @GetMapping("/search-by-email")
+    @Operation(summary = "Search customer by email")
+    public ResponseEntity<ApiResponse<CustomerResponse>> searchByEmail(@RequestParam String email) {
+        return ResponseEntity.ok(customerService.searchByEmail(email));
+    }
+
+    @PostMapping("/{id}/link-branch")
+    @Operation(summary = "Link customer to the active branch")
+    public ResponseEntity<ApiResponse<CustomerResponse>> linkBranch(@PathVariable Long id) {
+        return ResponseEntity.ok(customerService.linkBranch(id));
+    }
 }

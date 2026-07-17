@@ -12,20 +12,25 @@ import java.util.List;
 @Repository
 public interface DamageRecordRepository extends JpaRepository<DamageRecord, Long> {
 
-    List<DamageRecord> findByAdminIdOrderByCreatedAtDesc(Long adminId);
+    @Query("SELECT d FROM DamageRecord d WHERE d.admin.id = :adminId AND d.branch.id = :branchId ORDER BY d.createdAt DESC")
+    List<DamageRecord> findByAdminIdAndBranchIdOrderByCreatedAtDesc(@Param("adminId") Long adminId, @Param("branchId") Long branchId);
 
-    List<DamageRecord> findByAdminIdAndDamageDateOrderByCreatedAtDesc(Long adminId, LocalDate date);
+    @Query("SELECT d FROM DamageRecord d WHERE d.admin.id = :adminId AND d.branch.id = :branchId AND d.damageDate = :date ORDER BY d.createdAt DESC")
+    List<DamageRecord> findByAdminIdAndBranchIdAndDamageDateOrderByCreatedAtDesc(@Param("adminId") Long adminId, @Param("branchId") Long branchId, @Param("date") LocalDate date);
 
-    List<DamageRecord> findByAdminIdAndDamageDateBetweenOrderByDamageDateDesc(
-            Long adminId, LocalDate from, LocalDate to);
+    @Query("SELECT d FROM DamageRecord d WHERE d.admin.id = :adminId AND d.branch.id = :branchId AND d.damageDate BETWEEN :from AND :to ORDER BY d.damageDate DESC")
+    List<DamageRecord> findByAdminIdAndBranchIdAndDamageDateBetweenOrderByDamageDateDesc(
+            @Param("adminId") Long adminId, @Param("branchId") Long branchId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
     @Query("SELECT COALESCE(SUM(d.quantity), 0) FROM DamageRecord d " +
-           "WHERE d.admin.id = :adminId AND d.product.id = :productId " +
+           "WHERE d.admin.id = :adminId AND d.branch.id = :branchId AND d.product.id = :productId " +
            "AND d.damageDate = :date")
-    Integer sumDamageByProductAndDate(
+    Integer sumDamageByProductAndBranchAndDate(
             @Param("adminId") Long adminId,
+            @Param("branchId") Long branchId,
             @Param("productId") Long productId,
             @Param("date") LocalDate date);
 
-    List<DamageRecord> findByAdminIdAndProductIdOrderByCreatedAtDesc(Long adminId, Long productId);
+    @Query("SELECT d FROM DamageRecord d WHERE d.admin.id = :adminId AND d.branch.id = :branchId AND d.product.id = :productId ORDER BY d.createdAt DESC")
+    List<DamageRecord> findByAdminIdAndBranchIdAndProductIdOrderByCreatedAtDesc(@Param("adminId") Long adminId, @Param("branchId") Long branchId, @Param("productId") Long productId);
 }

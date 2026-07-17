@@ -6,11 +6,13 @@ import com.smartinventory.dto.response.ApiResponse;
 import com.smartinventory.dto.response.CustomerResponse;
 import com.smartinventory.email.EmailService;
 import com.smartinventory.entity.Admin;
+import com.smartinventory.entity.Branch;
 import com.smartinventory.entity.Customer;
 import com.smartinventory.entity.OtpVerification;
 import com.smartinventory.exception.BadRequestException;
 import com.smartinventory.exception.DuplicateResourceException;
 import com.smartinventory.exception.ResourceNotFoundException;
+import com.smartinventory.repository.BranchRepository;
 import com.smartinventory.repository.CustomerRepository;
 import com.smartinventory.repository.OtpVerificationRepository;
 import com.smartinventory.util.SecurityUtils;
@@ -31,12 +33,24 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final OtpVerificationRepository otpRepository;
+    private final BranchRepository branchRepository;
     private final EmailService emailService;
     private final SecurityUtils securityUtils;
+    private final com.smartinventory.repository.StaffRepository staffRepository;
 
     public ApiResponse<List<CustomerResponse>> getAllCustomers() {
         Long adminId = securityUtils.getCurrentAdminId();
-        List<CustomerResponse> customers = customerRepository.findByAdminId(adminId)
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        List<Customer> list = branchId == null
+                ? customerRepository.findByAdminId(adminId)
+                : customerRepository.findByAdminIdAndBranchId(adminId, branchId);
+        List<CustomerResponse> customers = list
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Customers retrieved", customers);
     }
@@ -55,13 +69,23 @@ public class CustomerService {
     @Transactional
     public ApiResponse<CustomerResponse> createCustomer(CustomerRequest request) {
         Admin admin = securityUtils.getCurrentAdmin();
+        Long activeBranchId = securityUtils.getCurrentBranchId();
+        if (activeBranchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(admin.getId());
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
 
         boolean hasEmail = request.getEmail() != null && !request.getEmail().trim().isEmpty();
 
-        // Check duplicate email within same admin's customers
-        if (hasEmail && customerRepository.existsByEmailAndAdminId(request.getEmail(), admin.getId())) {
-            throw new DuplicateResourceException(
-                    "Customer with email " + request.getEmail() + " already exists");
+        if (hasEmail) {
+            java.util.Optional<Customer> existingOpt = activeBranchId == null
+                    ? customerRepository.findByEmailAndAdminId(request.getEmail().trim(), admin.getId())
+                    : customerRepository.findByEmailAndAdminIdAndBranchId(request.getEmail().trim(), admin.getId(), activeBranchId);
+            if (existingOpt.isPresent()) {
+                throw new DuplicateResourceException("Customer with email " + request.getEmail() + " already exists");
+            }
         }
 
         Customer customer = Customer.builder()
@@ -72,6 +96,13 @@ public class CustomerService {
                 .address(request.getAddress())
                 .emailVerified(!hasEmail) // no email = walk-in, auto-verified
                 .build();
+
+        if (activeBranchId != null) {
+            Branch activeBranch = branchRepository.findByIdAndAdminId(activeBranchId, admin.getId()).orElse(null);
+            if (activeBranch != null) {
+                customer.setBranches(new java.util.ArrayList<>(List.of(activeBranch)));
+            }
+        }
         customer = customerRepository.save(customer);
 
         if (hasEmail) {
@@ -156,7 +187,18 @@ public class CustomerService {
 
     public ApiResponse<List<CustomerResponse>> searchCustomers(String search) {
         Long adminId = securityUtils.getCurrentAdminId();
-        List<CustomerResponse> customers = customerRepository.searchByAdminId(adminId, search)
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+
+        List<Customer> list = branchId == null
+                ? customerRepository.searchByAdminId(adminId, search)
+                : customerRepository.searchByAdminIdAndBranchId(adminId, branchId, search);
+        List<CustomerResponse> customers = list
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Search results", customers);
     }
@@ -186,8 +228,12 @@ public class CustomerService {
 
     public Customer findByIdAndAdmin(Long id) {
         Long adminId = securityUtils.getCurrentAdminId();
-        return customerRepository.findByIdAndAdminId(id, adminId)
+        Long branchId = securityUtils.getCurrentBranchId();
+        Customer customer = (branchId == null
+                ? customerRepository.findByIdAndAdminId(id, adminId)
+                : customerRepository.findByIdAndAdminIdAndBranchId(id, adminId, branchId))
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
+        return customer;
     }
 
     public Customer findById(Long id) {
@@ -206,5 +252,42 @@ public class CustomerService {
                 .createdAt(customer.getCreatedAt())
                 .updatedAt(customer.getUpdatedAt())
                 .build();
+    }
+
+    public ApiResponse<CustomerResponse> searchByEmail(String email) {
+        Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        Customer customer = (branchId == null
+                ? customerRepository.findByEmailAndAdminId(email.trim(), adminId)
+                : customerRepository.findByEmailAndAdminIdAndBranchId(email.trim(), adminId, branchId))
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with email: " + email, 0L));
+        return ApiResponse.success("Customer found", mapToResponse(customer));
+    }
+
+    @Transactional
+    public ApiResponse<CustomerResponse> linkBranch(Long id) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isStaff = staffRepository.findByEmail(auth.getName()).isPresent();
+        if (isStaff) {
+            throw new RuntimeException("Access denied: Staff cannot import customers from other branches.");
+        }
+        Admin admin = securityUtils.getCurrentAdmin();
+        Long activeBranchId = securityUtils.getCurrentBranchId();
+        if (activeBranchId == null) {
+            throw new BadRequestException("No active branch context selected");
+        }
+        Customer customer = customerRepository.findByIdAndAdminId(id, admin.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", id));
+        Branch activeBranch = branchRepository.findByIdAndAdminId(activeBranchId, admin.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + activeBranchId));
+
+        if (customer.getBranches() == null) {
+            customer.setBranches(new java.util.ArrayList<>());
+        }
+        if (customer.getBranches().stream().noneMatch(b -> b.getId().equals(activeBranchId))) {
+            customer.getBranches().add(activeBranch);
+            customerRepository.save(customer);
+        }
+        return ApiResponse.success("Customer linked to branch successfully", mapToResponse(customer));
     }
 }

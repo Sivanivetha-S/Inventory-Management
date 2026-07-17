@@ -24,6 +24,10 @@ public class StockVerification {
     @JoinColumn(name = "admin_id", nullable = false)
     private Admin admin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
     @Column(nullable = false)
     private LocalDate verificationDate;
 

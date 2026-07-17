@@ -9,34 +9,69 @@
   Send btn    : --coral
 */
 
-/* ── Floating Button ── */
+/* ── Floating Button — squircle app icon, teal gradient, diagonal shadow ── */
 .cb-float-btn {
-  position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-  display: flex; align-items: center; gap: 9px;
-  padding: 13px 22px;
-  background: var(--coral); color: #fff;
-  border: none; border-radius: var(--r-pill);
-  cursor: pointer; font-family: var(--font-body); font-size: 14px; font-weight: 700;
-  transition: all var(--t-md) var(--spring);
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;          /* squircle — highly rounded corners */
+  background: transparent;      /* gradient drawn inside SVG */
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /*
+   * Material Design long diagonal shadow toward bottom-left
+   * Multiple layered shadows simulate the depth + direction
+   */
+  box-shadow:
+    -4px  6px  10px rgba(0, 137, 123, 0.30),
+    -8px 14px  22px rgba(0, 188, 212, 0.25),
+   -12px 20px  36px rgba(0, 150, 136, 0.18),
+     0px  2px   6px rgba(0,   0,   0, 0.12);
+
+  transition: transform 0.24s cubic-bezier(.34, 1.56, .64, 1),
+              box-shadow 0.24s ease;
 }
-.cb-float-btn:hover  { background: var(--coral-dk); transform: translateY(-3px) scale(1.05); box-shadow: 0 12px 30px rgba(255,163,132,.55); }
-.cb-float-btn:active { transform: scale(.95); }
 
-.cb-float-btn--open { background: var(--sage); color: var(--burg); box-shadow: var(--sh-2); }
-.cb-float-btn--open:hover { background: var(--sage-dk); }
-
-.cb-float-icon  { font-size: 20px; line-height: 1; }
-.cb-float-label { font-size: 13.5px; font-weight: 700; }
-
-/* Online dot */
-.cb-float-btn:not(.cb-float-btn--open)::after {
-  content: '';
-  position: absolute; top: 7px; right: 10px;
-  width: 9px; height: 9px;
-  background: #2e7d5a; border-radius: 50%;
-  border: 2px solid var(--coral);
-  animation: pulse 2.2s ease-in-out infinite;
+.cb-float-btn:hover {
+  transform: translateY(-4px) scale(1.07);
+  box-shadow:
+    -6px  10px  16px rgba(0, 137, 123, 0.38),
+   -12px  20px  32px rgba(0, 188, 212, 0.30),
+   -18px  30px  48px rgba(0, 150, 136, 0.22),
+     0px   3px   8px rgba(0,   0,   0, 0.14);
 }
+
+.cb-float-btn:active {
+  transform: scale(0.94);
+  box-shadow:
+    -2px  4px  8px rgba(0, 137, 123, 0.25),
+     0px  2px  4px rgba(0,   0,   0, 0.10);
+}
+
+/* Open state — darker squircle */
+.cb-float-btn--open {
+  border-radius: 16px;
+  background: #00796b;
+  box-shadow:
+    -4px  6px  12px rgba(0, 121, 107, 0.35),
+     0px  2px   6px rgba(0,   0,   0, 0.12);
+}
+.cb-float-btn--open:hover {
+  transform: translateY(-3px) scale(1.06);
+}
+
+/* Hide legacy text */
+.cb-float-label { display: none; }
+.cb-float-icon  { display: none; }
 
 /* ── Chat Window ── */
 .cb-window {
@@ -221,4 +256,74 @@
 @media (max-width:480px) {
   .cb-window { bottom:0; right:0; width:100vw; height:100dvh; border-radius:0; }
   .cb-float-btn { bottom:18px; right:18px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   NEW — Voice Input + TTS additions
+   All classes below are NEW. No existing classes were modified.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Microphone button ── */
+.cb-mic-btn {
+  width: 40px; height: 40px;
+  background: var(--sage-lt); border: 1.5px solid var(--border-md);
+  border-radius: var(--r-md); color: var(--text-2);
+  font-size: 15px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t-sm) var(--spring);
+}
+.cb-mic-btn:hover:not(:disabled) {
+  background: var(--coral); border-color: var(--coral);
+  color: #fff; transform: scale(1.1);
+}
+.cb-mic-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* Listening state — red pulse */
+.cb-mic-btn--listening {
+  background: #ef4444; border-color: #ef4444;
+  color: #fff;
+  animation: micPulse 1s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+}
+.cb-mic-btn--listening:hover:not(:disabled) {
+  background: #dc2626; border-color: #dc2626; transform: scale(1.05);
+}
+
+@keyframes micPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0.50); }
+  50%  { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.00); }
+  100% { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0.00); }
+}
+
+/* ── TTS (Text-to-Speech) toggle button in header ── */
+.cb-tts-btn {
+  /* inherits .cb-header-btn sizing */
+  transition: all var(--t-sm) var(--ease);
+}
+.cb-tts-btn--active {
+  background: rgba(94, 201, 154, 0.25);
+  border-color: rgba(94, 201, 154, 0.5);
+  color: #5ec99a;
+}
+.cb-tts-btn--active:hover {
+  background: rgba(94, 201, 154, 0.4) !important;
+  color: #fff !important;
+}
+
+/* ── Listening status bar (shown below messages, above input) ── */
+.cb-voice-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px;
+  background: rgba(239, 68, 68, 0.06);
+  border-top: 1px solid rgba(239, 68, 68, 0.15);
+  font-size: 12px; color: #ef4444; font-weight: 500;
+  flex-shrink: 0;
+  animation: fadeUp var(--t-md) var(--ease) both;
+}
+
+/* Pulsing red dot inside the status bar */
+.cb-voice-pulse {
+  width: 8px; height: 8px;
+  background: #ef4444; border-radius: 50%; flex-shrink: 0;
+  animation: micPulse 1s ease-in-out infinite;
 }

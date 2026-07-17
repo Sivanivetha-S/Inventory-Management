@@ -21,6 +21,12 @@ public class InvoiceResponse {
     private BigDecimal totalAmount;
     private String status;
     private String notes;
+    private Long staffId;
+    private String staffName;
+    private Long createdById;
+    private String createdByName;
+    private String createdByRole;
+    private String paymentMethod;
     private LocalDateTime createdAt;
 
     @Data

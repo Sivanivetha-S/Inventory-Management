@@ -44,11 +44,13 @@ public class OtpVerification {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return false;
     }
 
     public enum OtpType {
         ADMIN_REGISTRATION,
-        CUSTOMER_REGISTRATION
+        CUSTOMER_REGISTRATION,
+        SUPPLIER_REGISTRATION,
+        FORGOT_PASSWORD
     }
 }

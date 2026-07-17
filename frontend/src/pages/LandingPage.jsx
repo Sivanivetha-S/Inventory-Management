@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { FiArrowRight, FiMail, FiPackage, FiUsers, FiShield, FiBarChart2, FiFileText, FiPercent } from 'react-icons/fi'
+import { ArrowRight, Mail, Package, Users, Shield, BarChart2, FileText, Percent } from 'lucide-react'
 import './LandingPage.css'
 import Chatbot from '../components/chatbot/Chatbot'
 
@@ -121,10 +121,10 @@ export default function LandingPage() {
         <div className="lp-hero-blob lp-hero-blob--3" />
         <div className="lp-hero-inner">
           <div className="lp-hero__badge"><div className="lp-hero__badge-dot" />Retail Management Platform</div>
-          <h1 className="lp-hero__title">Smart Inventory<br /><span>Theft Detection</span><br />&amp; Billing System</h1>
+          <h1 className="lp-hero__title">AI-Integrated<br /><span>Inventory Intelligence</span><br />&amp; Loss Prevention Platform</h1>
           <p className="lp-hero__sub">One platform to manage products, bill customers, detect stock theft and grow your retail business with full confidence.</p>
           <div className="lp-hero__btns">
-            <Link to="/register" className="lp-btn lp-btn--solid">Get Started Free <FiArrowRight /></Link>
+            <Link to="/register" className="lp-btn lp-btn--solid">Get Started Free <ArrowRight size={16} strokeWidth={2} /></Link>
             <Link to="/login"    className="lp-btn lp-btn--ghost">Sign In</Link>
           </div>
           <div className="lp-hero__stats">
@@ -136,28 +136,28 @@ export default function LandingPage() {
       </div>
 
       {/* ══ ACCORDION SECTIONS ════════════════════ */}
-      <ASection icon={FiPackage}  label="Product Management"   title="Full control over your entire inventory"              sub="Add, update and track every product with real-time stock levels and instant low-stock alerts." items={PRODUCTS} />
-      <ASection icon={FiUsers}    label="Customer Management"  title="Know your customers, grow your business"              sub="Instant walk-ins or OTP-verified customers — each owner's data is completely private." items={CUSTOMERS} />
-      <ASection icon={FiFileText} label="Billing System"       title="Generate professional invoices in seconds"            sub="Cart billing, smart discounts, amount paid tracking and one-click printable invoices." items={BILLING} />
-      <ASection icon={FiShield}   label="Theft Detection"      title="Catch stock loss before it costs you more"           sub="Daily automated reminders, smart stock comparison and instant theft records with loss calculation." items={THEFT} />
-      <ASection icon={FiBarChart2}label="Analytics Dashboard"  title="Everything at a glance, always"                      sub="Revenue charts, low-stock warnings, theft counters and recent bills on one page." items={DASHBOARD} />
+      <ASection icon={Package}   label="Product Management"   title="Full control over your entire inventory"              sub="Add, update and track every product with real-time stock levels and instant low-stock alerts." items={PRODUCTS} />
+      <ASection icon={Users}     label="Customer Management"  title="Know your customers, grow your business"              sub="Instant walk-ins or OTP-verified customers — each owner's data is completely private." items={CUSTOMERS} />
+      <ASection icon={FileText}  label="Billing System"       title="Generate professional invoices in seconds"            sub="Cart billing, smart discounts, amount paid tracking and one-click printable invoices." items={BILLING} />
+      <ASection icon={Shield}    label="Theft Detection"      title="Catch stock loss before it costs you more"           sub="Daily automated reminders, smart stock comparison and instant theft records with loss calculation." items={THEFT} />
+      <ASection icon={BarChart2} label="Analytics Dashboard"  title="Everything at a glance, always"                      sub="Revenue charts, low-stock warnings, theft counters and recent bills on one page." items={DASHBOARD} />
 
       {/* ══ FOOTER ════════════════════════════════ */}
-      <div className="lp-footer">        <div className="lp-grid-overlay" />
+      <div className="lp-footer">
+        <div className="lp-grid-overlay" />
         <div style={{ position:'relative', zIndex:1 }}>
           <div className="lp-footer__logo lp-animate">SI</div>
           <h2 className="lp-footer__name lp-animate lp-delay-1">Smart Inventory</h2>
           <p className="lp-footer__tagline lp-animate lp-delay-2">Secure · Reliable · Intelligent</p>
           <div className="lp-footer__btns lp-animate lp-delay-3">
-            <Link to="/register" className="lp-btn lp-btn--solid">Start for Free <FiArrowRight /></Link>
+            <Link to="/register" className="lp-btn lp-btn--solid">Start for Free <ArrowRight /></Link>
             <Link to="/login"    className="lp-btn lp-btn--ghost">Already have an account?</Link>
           </div>
-          <div className="lp-footer__contact lp-animate lp-delay-4"><FiMail /> sidheessiva598@gmail.com</div>
+          <div className="lp-footer__contact lp-animate lp-delay-4"><Mail /> sidheessiva598@gmail.com</div>
           <p className="lp-footer__copy lp-animate lp-delay-4">© 2024 Smart Inventory System. All rights reserved.</p>
         </div>
       </div>
 
-      {/* ══ AI CHATBOT — floating assistant ══ */}
       <Chatbot />
     </div>
   )

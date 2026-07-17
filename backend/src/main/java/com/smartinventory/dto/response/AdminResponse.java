@@ -17,5 +17,6 @@ public class AdminResponse {
     private String shopCategory;
     private boolean emailVerified;
     private boolean registrationComplete;
-    private LocalDateTime createdAt;
+    private java.time.LocalDateTime createdAt;
+    private java.util.List<BranchResponse> branches;
 }

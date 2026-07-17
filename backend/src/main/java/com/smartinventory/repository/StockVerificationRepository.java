@@ -13,4 +13,8 @@ public interface StockVerificationRepository extends JpaRepository<StockVerifica
     Optional<StockVerification> findByAdminIdAndVerificationDate(Long adminId, LocalDate date);
 
     boolean existsByAdminIdAndVerificationDate(Long adminId, LocalDate date);
+
+    Optional<StockVerification> findByAdminIdAndBranchIdAndVerificationDate(Long adminId, Long branchId, LocalDate date);
+
+    boolean existsByAdminIdAndBranchIdAndVerificationDate(Long adminId, Long branchId, LocalDate date);
 }

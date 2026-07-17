@@ -1,92 +1,82 @@
-/*
-  DISCOUNTS PAGE — Light & Fruity
-  Replaces gold inline stat cards with proper themed cards
-  Improves discount card layout and badge visibility
-*/
+/* ══════════════════════════════════════════════════════
+   DISCOUNTS PAGE — Premium card grid 2026
+══════════════════════════════════════════════════════ */
 
-/* ── Override gold gradient stat cards to themed palette ── */
-/* These selectors target the exact inline style strings from Discounts.jsx */
-[style*="linear-gradient(135deg,#a07840,#c8a870)"] { background: var(--coral)    !important; border-radius: var(--r-lg) !important; }
-[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] { background: var(--burg)     !important; border-radius: var(--r-lg) !important; }
-[style*="linear-gradient(135deg,#8b6030,#c8a870)"] { background: #4a7a9a         !important; border-radius: var(--r-lg) !important; }
+/* Summary stats grid */
+.discounts-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
 
-/* Force readable text inside those override cards */
-[style*="linear-gradient(135deg,#a07840,#c8a870)"] p,
-[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] p,
-[style*="linear-gradient(135deg,#8b6030,#c8a870)"] p { color: rgba(255,255,255,.82) !important; }
+.discounts-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--sh-1);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--t-md) var(--ease), transform var(--t-md) var(--ease), border-color var(--t-md) var(--ease);
+}
+.discounts-stat-card:hover { box-shadow: var(--sh-glow); transform: translateY(-3px); border-color: rgba(79,70,229,.16); }
 
-[style*="linear-gradient(135deg,#a07840,#c8a870)"] h3,
-[style*="linear-gradient(135deg,#7a5c2e,#b08050)"] h3,
-[style*="linear-gradient(135deg,#8b6030,#c8a870)"] h3 { color: #fff !important; }
+.discounts-stat-icon {
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+}
+.discounts-stat-icon--all    { background: var(--accent-lt);         color: var(--accent); }
+.discounts-stat-icon--active { background: rgba(34,197,94,.10);      color: #16A34A; }
+.discounts-stat-icon--off    { background: var(--slate-100);          color: var(--slate-500); }
 
-/* ── Discount card polish ── */
+.discounts-stat-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.discounts-stat-value { font-size: 24px; font-weight: 700; color: var(--text-h); letter-spacing: -.04em; }
+
+/* Discount card */
 .discount-card {
-  background: var(--surface) !important;
-  border: 1.5px solid var(--border) !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--sh-1) !important;
-  transition: box-shadow var(--t-md) var(--ease), transform var(--t-md) var(--ease), border-color var(--t-sm) var(--ease) !important;
+  background: var(--surface)!important;
+  border: 1px solid var(--border)!important;
+  border-radius: var(--r-lg)!important;
+  box-shadow: var(--sh-1)!important;
+  transition: box-shadow var(--t-md) var(--ease), transform var(--t-md) var(--ease), border-color var(--t-sm) var(--ease)!important;
   overflow: hidden;
   position: relative;
 }
-.discount-card:hover {
-  box-shadow: var(--sh-3) !important;
-  transform: translateY(-3px) !important;
-  border-color: var(--coral) !important;
+.discount-card:hover { box-shadow: var(--sh-glow)!important; transform: translateY(-3px)!important; border-color: rgba(79,70,229,.20)!important; }
+.discount-card--active  { border-left: 3px solid var(--accent)!important; }
+.discount-card--inactive { border-left: 3px solid var(--slate-300)!important; opacity: .75; }
+
+/* Percentage pill */
+.discount-pct-pill {
+  background: var(--gradient-primary);
+  padding: 8px 18px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; gap: 5px;
+  box-shadow: 0 2px 8px rgba(79,70,229,.28);
 }
+.discount-pct-pill span { color: #fff; font-weight: 800; font-size: 20px; }
 
-/* Active card — coral left accent */
-.discount-card[style*="var(--primary)"] { border-left: 4px solid var(--coral) !important; }
-/* Inactive card — sage left accent */
-.discount-card[style*="#d1d5db"]        { border-left: 4px solid var(--sage-dk) !important; }
-.discount-card[style*="opacity: 0.7"],
-.discount-card[style*="opacity:0.7"]    { opacity: .75 !important; }
-
-/* Card name heading */
-.discount-card h3[style*="color:'var(--dark)'"],
-.discount-card h3[style*="color:var(--dark)"],
-.discount-card h3 { color: var(--burg) !important; font-size: 15px !important; font-weight: 700 !important; font-family: var(--font-display) !important; }
-
-/* Card description */
-.discount-card p[style*="color:'var(--gray)'"],
-.discount-card p[style*="color:var(--gray)"],
-.discount-card p  { color: #7a4a48 !important; font-size: 13px !important; }
-
-/* Percentage pill — override var(--gradient-primary) → flat coral */
-.discount-card [style*="background:'var(--gradient-primary)'"],
-.discount-card [style*="background:var(--gradient-primary)"],
-.discount-card [style*="background: var(--gradient-primary)"] {
-  background: var(--coral) !important;
-  border-radius: var(--r-pill) !important;
-  box-shadow: 0 2px 8px rgba(255,163,132,.35) !important;
+/* Min purchase chips */
+.discount-min-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600;
 }
-.discount-card [style*="background:var(--gradient-primary)"] span,
-.discount-card [style*="background: var(--gradient-primary)"] span,
-.discount-card [style*="background:'var(--gradient-primary)'"] span { color: #fff !important; }
+.discount-min-chip--has { background: var(--accent-lt); color: var(--accent-dk); border: 1px solid var(--indigo-200); }
+.discount-min-chip--none { background: var(--ok-bg); color: #15803D; border: 1px solid var(--ok-bdr); }
 
-/* Toggle active/inactive button text */
-.discount-card [style*="color: '#22c55e'"],
-.discount-card [style*="color:'#22c55e'"],
-.discount-card [style*="color:#22c55e"] { color: var(--ok) !important; }
-.discount-card [style*="color: '#9ca3af'"],
-.discount-card [style*="color:'#9ca3af'"],
-.discount-card [style*="color:#9ca3af"] { color: var(--text-3) !important; }
-
-/* Min purchase pill — purple → coral-lt with burg text */
-.discount-card [style*="background:'#ede9fe'"],
-.discount-card [style*="background:#ede9fe"] {
-  background: var(--coral-lt) !important;
-  color: var(--burg) !important;
-  border-radius: var(--r-pill) !important;
+/* Toggle button */
+.discount-toggle-btn {
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  transition: color var(--t-sm) var(--ease);
 }
-/* No-minimum pill — green → sage with ok text */
-.discount-card [style*="background:'#dcfce7'"],
-.discount-card [style*="background:#dcfce7"] {
-  background: rgba(46,125,90,.1) !important;
-  color: var(--ok) !important;
-  border-radius: var(--r-pill) !important;
-}
+.discount-toggle-btn--on  { color: #16A34A; }
+.discount-toggle-btn--off { color: var(--text-4); }
 
-/* Created date */
-.discount-card [style*="color:'var(--gray)'"],
-.discount-card [style*="color:var(--gray)"] { color: var(--text-3) !important; }
+@media(max-width:640px) { .discounts-stats-grid { grid-template-columns: 1fr; } }

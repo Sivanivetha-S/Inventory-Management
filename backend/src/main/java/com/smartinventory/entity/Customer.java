@@ -53,6 +53,14 @@ public class Customer {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Invoice> invoices;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "customer_branches",
+        joinColumns = @JoinColumn(name = "customer_id"),
+        inverseJoinColumns = @JoinColumn(name = "branch_id")
+    )
+    private List<Branch> branches;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

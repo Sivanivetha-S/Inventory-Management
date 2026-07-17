@@ -1,0 +1,14 @@
+/* ══════════════════════════════════════════════════════
+   PRODUCTS PAGE — Premium table layout 2026
+══════════════════════════════════════════════════════ */
+
+/* Stock badge upgrade inside table */
+.products-stock-ok  { background:var(--ok-bg)!important;   color:#15803d!important; border:1px solid var(--ok-bdr)!important; }
+.products-stock-low { background:var(--err-bg)!important;  color:#DC2626!important; border:1px solid var(--err-bdr)!important; }
+
+/* Delete confirm emoji → clean icon */
+.delete-icon-wrap { width:64px; height:64px; border-radius:var(--r-lg); background:var(--err-bg); border:1px solid var(--err-bdr); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+
+/* Grid form layout inside modal */
+.product-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:480px) { .product-form-grid { grid-template-columns:1fr; } }

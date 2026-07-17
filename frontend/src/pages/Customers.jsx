@@ -2,14 +2,16 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { customerAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import {
-  FiPlus, FiEdit2, FiTrash2, FiSearch, FiUsers,
-  FiX, FiMail, FiPhone, FiMapPin, FiCheckCircle, FiClock
-} from 'react-icons/fi'
+  Plus, Edit2, Trash2, Search, Users,
+  X, Mail, Phone, MapPin, CheckCircle, Clock, AlertTriangle
+} from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import './Customers.css'
 
 const EMPTY_FORM = { name: '', email: '', phoneNumber: '', address: '' }
 
 export default function Customers() {
+  const { activeBranchId } = useAuth()
   const [customers, setCustomers]   = useState([])
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
@@ -20,8 +22,7 @@ export default function Customers() {
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState(null)
 
-  // OTP verification modal
-  const [otpModal, setOtpModal]     = useState(null)  // { email, name }
+  const [otpModal, setOtpModal]     = useState(null)
   const [otp, setOtp]               = useState('')
   const [otpError, setOtpError]     = useState('')
   const [verifying, setVerifying]   = useState(false)
@@ -29,12 +30,13 @@ export default function Customers() {
   const timerRef                    = useRef(null)
 
   const load = useCallback(() => {
+    setCustomers([])
     setLoading(true)
     customerAPI.getAll()
       .then(r => setCustomers(r.data.data))
       .catch(() => toast.error('Failed to load customers'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeBranchId])
 
   useEffect(() => { load() }, [load])
 
@@ -52,7 +54,7 @@ export default function Customers() {
     }, 1000)
   }
 
-  const openAdd = () => { setEditing(null); setForm(EMPTY_FORM); setErrors({}); setModalOpen(true) }
+  const openAdd  = () => { setEditing(null); setForm(EMPTY_FORM); setErrors({}); setModalOpen(true) }
   const openEdit = (c) => {
     setEditing(c.id)
     setForm({ name: c.name, email: c.email || '', phoneNumber: c.phoneNumber || '', address: c.address || '' })
@@ -76,18 +78,14 @@ export default function Customers() {
       if (editing) {
         await customerAPI.update(editing, form)
         toast.success('Customer updated!')
-        setModalOpen(false)
-        load()
+        setModalOpen(false); load()
       } else {
-        const res = await customerAPI.create(form)
+        await customerAPI.create(form)
         const hasEmail = form.email && form.email.trim() !== ''
-        setModalOpen(false)
-        load()
+        setModalOpen(false); load()
         if (hasEmail) {
-          // OTP was sent to customer email — open OTP modal
           toast.success('OTP sent to customer email!')
-          setOtp('')
-          setOtpError('')
+          setOtp(''); setOtpError('')
           setOtpModal({ email: form.email, name: form.name })
           startTimer()
         } else {
@@ -95,7 +93,26 @@ export default function Customers() {
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Save failed')
+      const errMsg = err.response?.data?.message
+      if (errMsg === 'Customer already exists in another branch.') {
+        if (window.confirm('Customer already exists in another branch. Do you want to add this existing customer to this branch?')) {
+          try {
+            const searchRes = await customerAPI.searchByEmail(form.email)
+            if (searchRes.data?.success) {
+              const cust = searchRes.data.data
+              const linkRes = await customerAPI.linkBranch(cust.id)
+              if (linkRes.data?.success) {
+                toast.success('Customer added to this branch successfully!')
+                setModalOpen(false); load()
+              }
+            }
+          } catch (linkErr) {
+            toast.error(linkErr.response?.data?.message || 'Failed to link customer')
+          }
+        }
+      } else {
+        toast.error(errMsg || 'Save failed')
+      }
     } finally { setSaving(false) }
   }
 
@@ -105,8 +122,7 @@ export default function Customers() {
     try {
       await customerAPI.verifyOtp({ email: otpModal.email, otp })
       toast.success('Customer verified and activated!')
-      setOtpModal(null)
-      load()
+      setOtpModal(null); load()
     } catch (err) {
       setOtpError(err.response?.data?.message || 'Invalid OTP')
     } finally { setVerifying(false) }
@@ -115,16 +131,12 @@ export default function Customers() {
   const handleResendOtp = async () => {
     try {
       await customerAPI.resendOtp(otpModal.email)
-      toast.success('OTP resent!')
-      startTimer()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to resend OTP')
-    }
+      toast.success('OTP resent!'); startTimer()
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to resend OTP') }
   }
 
   const openOtpForPending = (c) => {
-    setOtp('')
-    setOtpError('')
+    setOtp(''); setOtpError('')
     setOtpModal({ email: c.email, name: c.name })
     startTimer()
   }
@@ -142,6 +154,8 @@ export default function Customers() {
     setErrors(p => ({ ...p, [e.target.name]: '' }))
   }
 
+  const pendingCount = customers.filter(c => !c.emailVerified && c.email).length
+
   return (
     <div className="animate-fade-in">
       <div className="page-header">
@@ -149,31 +163,28 @@ export default function Customers() {
           <h1 className="page-title">Customers</h1>
           <p className="page-subtitle">
             {customers.length} total &nbsp;·&nbsp;
-            <span style={{ color:'#22c55e' }}>{customers.filter(c => c.emailVerified).length} verified</span>
+            <span style={{ color:'var(--ok)', fontWeight:600 }}>{customers.filter(c => c.emailVerified).length} verified</span>
             &nbsp;·&nbsp;
-            <span style={{ color:'#f59e0b' }}>{customers.filter(c => !c.emailVerified && c.email).length} pending</span>
+            <span style={{ color:'var(--warn)', fontWeight:600 }}>{pendingCount} pending</span>
           </p>
         </div>
         <div style={{ display:'flex', gap:12, alignItems:'center' }}>
           <div className="search-bar">
-            <FiSearch style={{ color:'var(--gray)' }} />
-            <input placeholder="Search customers..." value={search}
-              onChange={e => setSearch(e.target.value)} />
-            {search && <button onClick={() => setSearch('')}
-              style={{ background:'none', border:'none', cursor:'pointer', color:'var(--gray)' }}><FiX /></button>}
+            <Search size={15} strokeWidth={1.75} />
+            <input placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} />
+            {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-4)', display:'flex' }}><X size={14} /></button>}
           </div>
-          <button className="btn btn-primary" onClick={openAdd}><FiPlus /> Add Customer</button>
+          <button className="btn btn-primary" onClick={openAdd}><Plus size={15} strokeWidth={2} /> Add Customer</button>
         </div>
       </div>
 
-      {/* OTP info banner */}
-      {customers.some(c => !c.emailVerified && c.email) && (
-        <div style={{ background:'#fefce8', border:'1px solid #fbbf24', borderRadius:12,
-          padding:'12px 18px', marginBottom:16, display:'flex', alignItems:'center', gap:12, fontSize:14 }}>
-          <span style={{ fontSize:20 }}>⚠️</span>
-          <span style={{ color:'#92400e' }}>
-            <strong>{customers.filter(c => !c.emailVerified && c.email).length} customer(s)</strong> are
-            pending OTP verification. Click the <strong>Verify OTP</strong> button next to them.
+      {/* OTP pending banner */}
+      {pendingCount > 0 && (
+        <div className="customers-otp-banner">
+          <AlertTriangle size={18} strokeWidth={1.75} style={{ flexShrink:0 }} />
+          <span>
+            <strong>{pendingCount} customer(s)</strong> pending OTP verification.
+            Click the <strong>Verify OTP</strong> button next to them.
           </span>
         </div>
       )}
@@ -181,7 +192,7 @@ export default function Customers() {
       {loading
         ? <div className="loading-center"><div className="spinner" /></div>
         : filtered.length === 0
-          ? <div className="empty-state"><FiUsers size={48} /><h3>No customers found</h3></div>
+          ? <div className="empty-state"><Users size={48} /><h3>No customers found</h3></div>
           : <div className="table-container">
               <table>
                 <thead>
@@ -197,49 +208,39 @@ export default function Customers() {
                       <td><strong>{c.name}</strong></td>
                       <td>
                         {c.email
-                          ? <span style={{ display:'flex', alignItems:'center', gap:4 }}>
-                              <FiMail size={13} />{c.email}
+                          ? <span style={{ display:'flex', alignItems:'center', gap:5, color:'var(--text-2)' }}>
+                              <Mail size={13} strokeWidth={1.75} style={{ color:'var(--text-4)', flexShrink:0 }} />{c.email}
                             </span>
-                          : <span style={{ color:'#9ca3af' }}>—</span>}
+                          : <span style={{ color:'var(--text-4)' }}>—</span>}
                       </td>
                       <td>
                         {c.phoneNumber
-                          ? <span style={{ display:'flex', alignItems:'center', gap:4 }}>
-                              <FiPhone size={13} />{c.phoneNumber}
+                          ? <span style={{ display:'flex', alignItems:'center', gap:5, color:'var(--text-2)' }}>
+                              <Phone size={13} strokeWidth={1.75} style={{ color:'var(--text-4)', flexShrink:0 }} />{c.phoneNumber}
                             </span>
-                          : <span style={{ color:'#9ca3af' }}>—</span>}
+                          : <span style={{ color:'var(--text-4)' }}>—</span>}
                       </td>
                       <td>
                         {c.address
-                          ? <span style={{ display:'flex', alignItems:'center', gap:4 }}>
-                              <FiMapPin size={13} />{c.address}
+                          ? <span style={{ display:'flex', alignItems:'center', gap:5, color:'var(--text-2)' }}>
+                              <MapPin size={13} strokeWidth={1.75} style={{ color:'var(--text-4)', flexShrink:0 }} />{c.address}
                             </span>
-                          : <span style={{ color:'#9ca3af' }}>—</span>}
+                          : <span style={{ color:'var(--text-4)' }}>—</span>}
                       </td>
                       <td>
                         {!c.email
                           ? <span className="badge badge-gray">Walk-in</span>
                           : c.emailVerified
-                            ? <span className="badge badge-success"><FiCheckCircle size={11} /> Verified</span>
-                            : <span className="badge badge-warning"><FiClock size={11} /> Pending OTP</span>}
+                            ? <span className="badge badge-success"><CheckCircle size={11} strokeWidth={2} /> Verified</span>
+                            : <span className="badge badge-warning"><Clock size={11} strokeWidth={2} /> Pending OTP</span>}
                       </td>
                       <td>
-                        <div style={{ display:'flex', gap:6 }}>
+                        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                           {c.email && !c.emailVerified && (
-                            <button
-                              className="btn btn-primary btn-sm"
-                              onClick={() => openOtpForPending(c)}
-                              title="Verify OTP"
-                            >
-                              Verify OTP
-                            </button>
+                            <button className="btn btn-primary btn-sm" onClick={() => openOtpForPending(c)}>Verify OTP</button>
                           )}
-                          <button className="btn-icon btn-icon-edit" onClick={() => openEdit(c)}>
-                            <FiEdit2 />
-                          </button>
-                          <button className="btn-icon btn-icon-delete" onClick={() => setDeleteId(c.id)}>
-                            <FiTrash2 />
-                          </button>
+                          <button className="btn-icon btn-icon-edit" onClick={() => openEdit(c)} title="Edit"><Edit2 size={14} strokeWidth={1.75} /></button>
+                          <button className="btn-icon btn-icon-delete" onClick={() => setDeleteId(c.id)} title="Delete"><Trash2 size={14} strokeWidth={1.75} /></button>
                         </div>
                       </td>
                     </tr>
@@ -254,16 +255,12 @@ export default function Customers() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModalOpen(false)}>
           <div className="modal-box">
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-              <h2 style={{ fontSize:20, fontWeight:700 }}>
-                {editing ? 'Edit Customer' : 'Add Customer'}
-              </h2>
-              <button className="btn-icon" style={{ background:'#f3f4f6' }}
-                onClick={() => setModalOpen(false)}><FiX /></button>
+              <h2 style={{ fontSize:20, fontWeight:700 }}>{editing ? 'Edit Customer' : 'Add Customer'}</h2>
+              <button className="btn-icon" onClick={() => setModalOpen(false)}><X size={16} strokeWidth={1.75} /></button>
             </div>
 
             {!editing && (
-              <div style={{ background:'#f0f9ff', border:'1px solid #bae6fd', borderRadius:10,
-                padding:'10px 14px', marginBottom:14, fontSize:13, color:'#0369a1' }}>
+              <div className="customers-info-banner">
                 💡 If you provide an email, an <strong>OTP will be sent to the customer</strong>.
                 Walk-in customers without email are added instantly.
               </div>
@@ -277,31 +274,26 @@ export default function Customers() {
                 {errors.name && <p className="form-error">{errors.name}</p>}
               </div>
               <div className="form-group">
-                <label className="form-label">Email Address
-                  <span style={{ color:'var(--gray)', fontWeight:400, marginLeft:6, fontSize:12 }}>
-                    (OTP will be sent here)
-                  </span>
+                <label className="form-label">
+                  Email Address
+                  <span style={{ color:'var(--text-4)', fontWeight:400, marginLeft:6, fontSize:12 }}>(OTP will be sent here)</span>
                 </label>
-                <input type="email" name="email"
-                  className={`form-input ${errors.email ? 'error' : ''}`}
+                <input type="email" name="email" className={`form-input ${errors.email ? 'error' : ''}`}
                   value={form.email} onChange={ch} placeholder="customer@example.com" />
                 {errors.email && <p className="form-error">{errors.email}</p>}
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
-                  <input name="phoneNumber" className="form-input"
-                    value={form.phoneNumber} onChange={ch} placeholder="+91 9876543210" />
+                  <input name="phoneNumber" className="form-input" value={form.phoneNumber} onChange={ch} placeholder="+91 9876543210" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Address</label>
-                  <input name="address" className="form-input"
-                    value={form.address} onChange={ch} placeholder="Customer address" />
+                  <input name="address" className="form-input" value={form.address} onChange={ch} placeholder="Customer address" />
                 </div>
               </div>
               <div style={{ display:'flex', gap:12, justifyContent:'flex-end', marginTop:8 }}>
-                <button type="button" className="btn btn-secondary"
-                  onClick={() => setModalOpen(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? <span className="btn-spinner" /> : (editing ? 'Update' : 'Add & Send OTP')}
                 </button>
@@ -316,59 +308,34 @@ export default function Customers() {
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth:440 }}>
             <div style={{ textAlign:'center', marginBottom:24 }}>
-              <div style={{ width:64, height:64, background:'linear-gradient(135deg,#6c63ff,#9c87fc)',
-                borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:28, margin:'0 auto 16px' }}>📧</div>
+              <div className="otp-modal-icon">
+                <Mail size={28} strokeWidth={1.75} style={{ color:'#fff' }} />
+              </div>
               <h2 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Verify Customer Email</h2>
-              <p style={{ color:'var(--gray)', fontSize:14, lineHeight:1.6 }}>
-                An OTP has been sent to <strong>{otpModal.email}</strong>.<br />
-                Enter the 6-digit code below to activate <strong>{otpModal.name}</strong>.
+              <p style={{ color:'var(--text-3)', fontSize:14, lineHeight:1.6 }}>
+                OTP sent to <strong style={{ color:'var(--text-h)' }}>{otpModal.email}</strong>.<br />
+                Enter the 6-digit code to activate <strong style={{ color:'var(--text-h)' }}>{otpModal.name}</strong>.
               </p>
             </div>
-
             <div className="form-group">
-              <label className="form-label" style={{ textAlign:'center', display:'block' }}>
-                Enter OTP
-              </label>
-              <input
-                className={`form-input ${otpError ? 'error' : ''}`}
-                style={{ textAlign:'center', letterSpacing:12, fontSize:28, padding:'14px' }}
-                maxLength={6}
-                value={otp}
+              <label className="form-label" style={{ textAlign:'center', display:'block' }}>Enter OTP</label>
+              <input className={`form-input otp-big-input ${otpError ? 'error' : ''}`}
+                maxLength={6} value={otp}
                 onChange={e => { setOtp(e.target.value); setOtpError('') }}
-                placeholder="000000"
-                autoFocus
-              />
+                placeholder="000000" autoFocus />
               {otpError && <p className="form-error" style={{ textAlign:'center' }}>{otpError}</p>}
             </div>
-
-            <button
-              className="btn btn-primary"
-              style={{ width:'100%', justifyContent:'center', padding:14, fontSize:15, marginBottom:12 }}
-              onClick={handleVerifyOtp}
-              disabled={verifying}
-            >
-              {verifying ? <span className="btn-spinner" /> : '✅ Verify & Activate Customer'}
+            <button className="btn btn-primary"
+              style={{ width:'100%', justifyContent:'center', padding:'13px', fontSize:15, marginBottom:12 }}
+              onClick={handleVerifyOtp} disabled={verifying}>
+              {verifying ? <span className="btn-spinner" /> : <><CheckCircle size={16} strokeWidth={2} /> Verify &amp; Activate Customer</>}
             </button>
-
-            <div style={{ textAlign:'center', marginBottom:8 }}>
+            <div className="resend-row">
               {resendTimer > 0
-                ? <span style={{ color:'var(--gray)', fontSize:13 }}>Resend OTP in {resendTimer}s</span>
-                : <button
-                    style={{ background:'none', border:'none', color:'var(--primary)',
-                      fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
-                    onClick={handleResendOtp}
-                  >Resend OTP</button>
-              }
+                ? <span className="resend-timer">Resend OTP in {resendTimer}s</span>
+                : <button className="resend-btn" onClick={handleResendOtp}>Resend OTP</button>}
             </div>
-
-            <button
-              style={{ width:'100%', background:'none', border:'none', color:'var(--gray)',
-                fontSize:13, cursor:'pointer', fontFamily:'inherit', padding:'8px 0' }}
-              onClick={() => setOtpModal(null)}
-            >
-              Close (verify later)
-            </button>
+            <button className="close-later-btn" onClick={() => setOtpModal(null)}>Close (verify later)</button>
           </div>
         </div>
       )}
@@ -377,11 +344,11 @@ export default function Customers() {
       {deleteId && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ maxWidth:400, textAlign:'center' }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>👤</div>
+            <div style={{ width:64, height:64, borderRadius:'var(--r-lg)', background:'var(--err-bg)', border:'1px solid var(--err-bdr)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+              <Trash2 size={28} strokeWidth={1.75} style={{ color:'var(--err)' }} />
+            </div>
             <h3 style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>Delete Customer?</h3>
-            <p style={{ color:'var(--gray)', marginBottom:24 }}>
-              This will remove the customer and all their invoices.
-            </p>
+            <p style={{ color:'var(--text-3)', marginBottom:24 }}>This will remove the customer and all their invoices.</p>
             <div style={{ display:'flex', gap:12, justifyContent:'center' }}>
               <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>Cancel</button>
               <button className="btn btn-danger" onClick={() => handleDelete(deleteId)}>Delete</button>

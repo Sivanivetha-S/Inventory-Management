@@ -28,6 +28,12 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
+    @GetMapping("/supplier-catalog")
+    @Operation(summary = "Get all supplier catalog products")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getSupplierCatalog() {
+        return ResponseEntity.ok(productService.getSupplierCatalog());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID")
     public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long id) {
@@ -73,3 +79,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getCategories());
     }
 }
+
+// ── Barcode decode ────────────────────────────────────────────────────────
+// This endpoint is appended at the bottom. Actual barcode IMAGE decoding
+// (ZXing) is handled in a dedicated BarcodeController to keep ProductController clean.

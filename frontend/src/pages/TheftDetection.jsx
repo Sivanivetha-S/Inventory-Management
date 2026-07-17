@@ -1,10 +1,13 @@
+
 import React, { useEffect, useState, useCallback } from 'react'
 import { theftAPI, productAPI, damageAPI } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import {
-  FiShield, FiAlertTriangle, FiCheckCircle, FiX,
-  FiDownload, FiEdit2, FiCalendar, FiPackage, FiPlus
-} from 'react-icons/fi'
+  Shield, AlertTriangle, CheckCircle, X,
+  Download, Edit2, Calendar, Package, Plus,
+  ClipboardList, Search, History, Layers,
+} from 'lucide-react'
 import './TheftDetection.css'
 
 const todayStr = () => new Date().toISOString().split('T')[0]
@@ -12,13 +15,14 @@ const todayStr = () => new Date().toISOString().split('T')[0]
 const DAMAGE_REASONS = ['BROKEN', 'EXPIRED', 'DEFECTIVE', 'OTHER']
 
 const TABS = [
-  { id: 'damage',   label: '📦 Damage Entry' },
-  { id: 'verify',   label: '🔍 Stock Verification' },
-  { id: 'history',  label: '🚨 Loss History' },
-  { id: 'damages',  label: '🗂️ Damage History' },
+  { id: 'damage',  label: 'Damage Entry',       icon: Package },
+  { id: 'verify',  label: 'Stock Verification', icon: Search },
+  { id: 'history', label: 'Loss History',        icon: AlertTriangle },
+  { id: 'damages', label: 'Damage History',      icon: Layers },
 ]
 
 export default function TheftDetection() {
+  const { activeBranchId } = useAuth()
   const [tab, setTab]           = useState('damage')
   const [products, setProducts] = useState([])
   const [records, setRecords]   = useState([])
@@ -40,6 +44,7 @@ export default function TheftDetection() {
   const [filterDate, setFilterDate]   = useState('')
   const [damageFilter, setDamageFilter] = useState('')
   const [loading, setLoading]         = useState(false)
+  const [loadError, setLoadError]     = useState('')
 
   // ── Notes modal ──
   const [notesModal, setNotesModal] = useState(null)
@@ -47,6 +52,8 @@ export default function TheftDetection() {
   const [noteStatus, setNoteStatus] = useState('')
 
   const loadProducts = useCallback(() => {
+    setProducts([])
+    setEntries([])
     productAPI.getAll().then(r => {
       const prods = r.data.data
       setProducts(prods)
@@ -55,15 +62,25 @@ export default function TheftDetection() {
         currentStock: p.currentStock, actualStock: '', adminNotes: ''
       })))
     }).catch(() => toast.error('Failed to load products'))
-  }, [])
+  }, [activeBranchId])
 
   const loadRecords = useCallback(() => {
+    setRecords([])
+    setDamages([])
+    setLoadError('')
     setLoading(true)
     Promise.all([theftAPI.getAll(), damageAPI.getAll()])
-      .then(([tr, dr]) => { setRecords(tr.data.data); setDamages(dr.data.data) })
-      .catch(() => toast.error('Failed to load records'))
+      .then(([tr, dr]) => {
+        setRecords(Array.isArray(tr.data?.data) ? tr.data.data : [])
+        setDamages(Array.isArray(dr.data?.data) ? dr.data.data : [])
+      })
+      .catch(error => {
+        const message = error.response?.data?.message || error.message || 'Failed to load theft records'
+        setLoadError(message)
+        toast.error(message)
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeBranchId])
 
   useEffect(() => { loadProducts(); loadRecords() }, [loadProducts, loadRecords])
 
@@ -173,15 +190,28 @@ export default function TheftDetection() {
     <div className="animate-fade-in">
 
       {/* ── TABS ── */}
-      <div className="billing-tabs" style={{ marginBottom:24, flexWrap:'wrap' }}>
+      <div className="td-tabs">
         {TABS.map(t => (
           <button
             key={t.id}
-            className={`billing-tab ${tab === t.id ? 'active' : ''}`}
+            className={`td-tab ${tab === t.id ? 'td-tab--active' : ''}`}
             onClick={() => setTab(t.id)}
-          >{t.label}</button>
+          >
+            <t.icon size={14} strokeWidth={1.75} />
+            {t.label}
+          </button>
         ))}
       </div>
+
+      {loadError && (
+        <div className="td-banner td-banner--info" role="alert">
+          <AlertTriangle size={20} />
+          <div>
+            <h3>Unable to load theft records</h3>
+            <p>{loadError}</p>
+          </div>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════
           TAB 1 — DAMAGE ENTRY
@@ -189,13 +219,12 @@ export default function TheftDetection() {
       {tab === 'damage' && (
         <div>
           {/* Info banner */}
-          <div className="card" style={{ marginBottom:20, borderLeft:'3px solid #f59e0b',
-            background:'rgba(245,158,11,0.08)' }}>
+          <div className="td-banner td-banner--info">
             <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
-              <span style={{ fontSize:32 }}>📦</span>
+              <span className="td-banner__icon"><Package size={28} strokeWidth={1.5} /></span>
               <div>
-                <h3 style={{ fontWeight:700, marginBottom:6 }}>Damage Entry</h3>
-                <p style={{ fontSize:14, lineHeight:1.6, color:'var(--gray)' }}>
+                <h3>Damage Entry</h3>
+                <p>
                   Record damaged inventory here. The damaged quantity will be
                   <strong> automatically deducted from stock</strong> and will
                   <strong> not</strong> be counted as inventory theft during daily verification.
@@ -208,7 +237,7 @@ export default function TheftDetection() {
             {/* Form */}
             <div className="card">
               <h3 style={{ fontWeight:700, fontSize:16, marginBottom:20 }}>
-                <FiPackage style={{ marginRight:8, color:'#f59e0b' }} />
+                <Package size={16} strokeWidth={1.75} style={{ marginRight:8, color:'#D97706', verticalAlign:'middle' }} />
                 Record Damaged Stock
               </h3>
               <form onSubmit={handleSaveDamage}>
@@ -246,17 +275,12 @@ export default function TheftDetection() {
 
                 <div className="form-group">
                   <label className="form-label">Damage Reason *</label>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  <div className="td-reason-grid">
                     {DAMAGE_REASONS.map(r => (
-                      <label key={r} style={{ display:'flex', alignItems:'center', gap:8,
-                        padding:'10px 12px', border:`1.5px solid ${damageForm.reason === r ? '#6c63ff' : 'rgba(108,99,255,0.25)'}`,
-                        borderRadius:10, cursor:'pointer',
-                        background: damageForm.reason === r ? 'rgba(108,99,255,0.15)' : 'transparent',
-                        transition:'all 0.18s ease' }}>
+                      <label key={r} className={`td-reason-option ${damageForm.reason === r ? 'td-reason-option--selected' : ''}`}>
                         <input type="radio" name="reason" value={r} checked={damageForm.reason === r}
-                          onChange={() => setDamageForm(p => ({...p, reason: r}))}
-                          style={{ accentColor:'#6c63ff' }} />
-                        <span style={{ fontSize:13, fontWeight:600, color: damageForm.reason === r ? '#a78bfa' : 'var(--gray)' }}>
+                          onChange={() => setDamageForm(p => ({...p, reason: r}))} />
+                        <span>
                           {r === 'BROKEN' ? '💔 Broken' : r === 'EXPIRED' ? '⏳ Expired' : r === 'DEFECTIVE' ? '🔧 Defective' : '📝 Other'}
                         </span>
                       </label>
@@ -274,7 +298,7 @@ export default function TheftDetection() {
 
                 <button type="submit" className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }}
                   disabled={savingDamage}>
-                  {savingDamage ? <span className="btn-spinner" /> : <><FiPlus /> Save Damage Record</>}
+                  {savingDamage ? <span className="btn-spinner" /> : <><Plus size={15} strokeWidth={2} /> Save Damage Record</>}
                 </button>
               </form>
             </div>
@@ -286,20 +310,18 @@ export default function TheftDetection() {
               </h3>
               {damages.filter(d => d.damageDate === todayStr()).length === 0
                 ? <div className="empty-state" style={{ padding:'30px 0' }}>
-                    <FiPackage size={36} style={{ opacity:0.3 }} />
+                    <Package size={36} style={{ opacity:0.3 }} />
                     <p style={{ marginTop:10 }}>No damage recorded today</p>
                   </div>
                 : <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:420, overflowY:'auto' }}>
                     {damages.filter(d => d.damageDate === todayStr()).map(d => (
-                      <div key={d.id} style={{ display:'flex', alignItems:'center', gap:12,
-                        padding:'10px 14px', background:'rgba(245,158,11,0.08)',
-                        border:'1px solid rgba(245,158,11,0.2)', borderRadius:10 }}>
+                      <div key={d.id} className="td-damage-item">
                         <div style={{ flex:1 }}>
-                          <strong style={{ fontSize:13 }}>{d.productName}</strong>
-                          <div style={{ fontSize:12, color:'var(--gray)', marginTop:2 }}>{d.notes || '—'}</div>
+                          <div className="td-damage-item__name">{d.productName}</div>
+                          <div className="td-damage-item__notes">{d.notes || '—'}</div>
                         </div>
                         <span className="badge badge-warning">{d.reason}</span>
-                        <span style={{ fontWeight:800, color:'#f59e0b', fontSize:15 }}>−{d.quantity}</span>
+                        <span className="td-damage-item__qty">−{d.quantity}</span>
                       </div>
                     ))}
                   </div>
@@ -314,22 +336,20 @@ export default function TheftDetection() {
       ════════════════════════════════════════════ */}
       {tab === 'verify' && (
         <div>
-          <div className="card theft-info-card" style={{ marginBottom:20 }}>
-            <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
-              <span style={{ fontSize:36 }}>⏰</span>
-              <div>
-                <h3 style={{ fontWeight:700, marginBottom:6 }}>Daily Stock Verification</h3>
-                <p style={{ fontSize:14, lineHeight:1.6, color:'var(--gray)' }}>
-                  Enter the physical stock count for each product. The system calculates:<br />
-                  <strong>Unexplained Loss = Expected Stock − Actual Stock − Recorded Damage</strong><br />
-                  If unexplained loss &gt; 0 → <strong>"Possible Inventory Loss Detected"</strong> + email alert sent.
-                </p>
-              </div>
+          <div className="td-banner td-banner--verify" style={{ marginBottom:20 }}>
+            <span className="td-banner__icon">⏰</span>
+            <div>
+              <h3>Daily Stock Verification</h3>
+              <p>
+                Enter the physical stock count for each product. The system calculates:<br />
+                <strong>Unexplained Loss = Expected Stock − Actual Stock − Recorded Damage</strong><br />
+                If unexplained loss &gt; 0 → <strong>"Possible Inventory Loss Detected"</strong> + email alert sent.
+              </p>
             </div>
           </div>
 
           {products.length === 0
-            ? <div className="empty-state"><FiShield size={48} /><h3>No products to verify</h3></div>
+            ? <div className="empty-state"><Shield size={48} /><h3>No products to verify</h3></div>
             : <>
                 <div className="card" style={{ marginBottom:16 }}>
                   {/* Header row */}
@@ -418,7 +438,7 @@ export default function TheftDetection() {
                 ? <div style={{ textAlign:'center', padding:'30px 0' }}>
                     <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
                     <h3 style={{ fontWeight:700, color:'#22c55e' }}>No Unexplained Loss!</h3>
-                    <p style={{ color:'var(--gray)' }}>
+                    <p style={{ color:'#7a3c3a' }}>
                       {verifyResults.length > 0 && verifyResults.some(r => (r.damagedQuantity || 0) > 0)
                         ? 'All missing stock is explained by recorded damage records.'
                         : 'All stock counts match perfectly. Inventory is secure.'}
@@ -501,14 +521,14 @@ export default function TheftDetection() {
           {/* Filter + export */}
           <div className="card" style={{ marginBottom:16, display:'flex', gap:16, alignItems:'flex-end', flexWrap:'wrap' }}>
             <div>
-              <label className="form-label"><FiCalendar style={{ marginRight:4 }} />Filter by Date</label>
+              <label className="form-label"><Calendar size={13} strokeWidth={1.75} style={{ marginRight:4, verticalAlign:'middle' }} />Filter by Date</label>
               <input type="date" className="form-input" style={{ width:180 }}
                 value={filterDate} onChange={e => setFilterDate(e.target.value)} />
             </div>
-            {filterDate && <button className="btn btn-secondary" onClick={() => setFilterDate('')}><FiX /> Clear</button>}
+            {filterDate && <button className="btn btn-secondary" onClick={() => setFilterDate('')}><X size={14} /> Clear</button>}
             <div style={{ marginLeft:'auto' }}>
               <button className="btn btn-primary" onClick={exportLossCSV} disabled={filteredRecords.length === 0}>
-                <FiDownload /> Export CSV
+                <Download size={14} /> Export CSV
               </button>
             </div>
           </div>
@@ -516,7 +536,7 @@ export default function TheftDetection() {
           {loading
             ? <div className="loading-center"><div className="spinner" /></div>
             : filteredRecords.length === 0
-              ? <div className="empty-state"><FiCheckCircle size={48} /><h3>No loss records</h3><p>Your inventory is clean!</p></div>
+              ? <div className="empty-state"><CheckCircle size={48} /><h3>No Theft Records Found.</h3><p>Your inventory is clean!</p></div>
               : <div className="table-container">
                   <table>
                     <thead><tr>
@@ -548,13 +568,13 @@ export default function TheftDetection() {
                                : r.status}
                             </span>
                           </td>
-                          <td style={{ maxWidth:120, fontSize:12, color:'var(--gray)' }}>
+                          <td style={{ maxWidth:120, fontSize:12, color:'#7a3c3a' }}>
                             {r.adminNotes || <span style={{ opacity:0.4 }}>—</span>}
                           </td>
                           <td>
                             <button className="btn-icon btn-icon-edit"
                               onClick={() => { setNotesModal(r); setNoteText(r.adminNotes||''); setNoteStatus(r.status) }}>
-                              <FiEdit2 />
+                              <Edit2 size={14} strokeWidth={1.75} />
                             </button>
                           </td>
                         </tr>
@@ -573,17 +593,19 @@ export default function TheftDetection() {
         <div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:16, marginBottom:20 }}>
             {[
-              { label:'Total Records', value:damages.length,                                                     color:'linear-gradient(135deg,#a07840,#c8a870)', icon:'📋' },
-              { label:'Total Damaged', value:damages.reduce((s,d)=>s+d.quantity,0),                             color:'linear-gradient(135deg,#8b6030,#d4a843)', icon:'📦' },
-              { label:'Broken',        value:damages.filter(d=>d.reason==='BROKEN').length,                      color:'linear-gradient(135deg,#6b4820,#b08050)', icon:'💔' },
-              { label:'Expired',       value:damages.filter(d=>d.reason==='EXPIRED').length,                     color:'linear-gradient(135deg,#7a5c2e,#c8a870)', icon:'⏳' },
+              { label:'Total Records', value:damages.length,                                       icon: ClipboardList, color:'var(--accent)' },
+              { label:'Total Damaged', value:damages.reduce((s,d)=>s+d.quantity,0),               icon: Package,      color:'#D97706' },
+              { label:'Broken',        value:damages.filter(d=>d.reason==='BROKEN').length,        icon: AlertTriangle, color:'var(--err)' },
+              { label:'Expired',       value:damages.filter(d=>d.reason==='EXPIRED').length,       icon: History,      color:'var(--ok)' },
             ].map(s => (
-              <div key={s.label} style={{ background:s.color, borderRadius:'var(--radius-lg)',
-                padding:'16px', boxShadow:'var(--shadow-md)', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:24 }}>{s.icon}</span>
+              <div key={s.label} className="card" style={{ display:'flex', alignItems:'center', gap:14, padding:'18px 20px' }}>
+                <div style={{ width:40, height:40, borderRadius:'var(--r-sm)', display:'flex', alignItems:'center', justifyContent:'center',
+                  background:'rgba(99,102,241,.08)', color: s.color, flexShrink:0 }}>
+                  <s.icon size={20} strokeWidth={1.75} />
+                </div>
                 <div>
-                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.8)', fontWeight:600 }}>{s.label}</p>
-                  <h3 style={{ fontSize:20, fontWeight:800, color:'white' }}>{s.value}</h3>
+                  <p style={{ fontSize:11, color:'var(--text-3)', fontWeight:600, textTransform:'uppercase', letterSpacing:'.05em' }}>{s.label}</p>
+                  <h3 style={{ fontSize:22, fontWeight:700, color:'var(--text-h)', letterSpacing:'-.04em', marginTop:2 }}>{s.value}</h3>
                 </div>
               </div>
             ))}
@@ -591,14 +613,14 @@ export default function TheftDetection() {
 
           <div className="card" style={{ marginBottom:16, display:'flex', gap:16, alignItems:'flex-end', flexWrap:'wrap' }}>
             <div>
-              <label className="form-label"><FiCalendar style={{ marginRight:4 }} />Filter by Date</label>
+              <label className="form-label"><Calendar size={13} strokeWidth={1.75} style={{ marginRight:4, verticalAlign:'middle' }} />Filter by Date</label>
               <input type="date" className="form-input" style={{ width:180 }}
                 value={damageFilter} onChange={e => setDamageFilter(e.target.value)} />
             </div>
-            {damageFilter && <button className="btn btn-secondary" onClick={() => setDamageFilter('')}><FiX /> Clear</button>}
+            {damageFilter && <button className="btn btn-secondary" onClick={() => setDamageFilter('')}><X size={14} /> Clear</button>}
             <div style={{ marginLeft:'auto' }}>
               <button className="btn btn-primary" onClick={exportDamageCSV} disabled={filteredDamages.length === 0}>
-                <FiDownload /> Export CSV
+                <Download size={14} /> Export CSV
               </button>
             </div>
           </div>
@@ -606,7 +628,7 @@ export default function TheftDetection() {
           {loading
             ? <div className="loading-center"><div className="spinner" /></div>
             : filteredDamages.length === 0
-              ? <div className="empty-state"><FiPackage size={48} /><h3>No damage records</h3></div>
+              ? <div className="empty-state"><Package size={48} /><h3>No damage records</h3></div>
               : <div className="table-container">
                   <table>
                     <thead><tr><th>Date</th><th>Product</th><th>Quantity</th><th>Reason</th><th>Notes</th></tr></thead>
@@ -621,7 +643,7 @@ export default function TheftDetection() {
                               {d.reason==='BROKEN'?'💔 Broken':d.reason==='EXPIRED'?'⏳ Expired':d.reason==='DEFECTIVE'?'🔧 Defective':'📝 Other'}
                             </span>
                           </td>
-                          <td style={{ fontSize:12, color:'var(--gray)' }}>{d.notes || '—'}</td>
+                          <td style={{ fontSize:12, color:'#7a3c3a' }}>{d.notes || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -637,12 +659,12 @@ export default function TheftDetection() {
           <div className="modal-box" style={{ maxWidth:480 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <h3 style={{ fontWeight:700, fontSize:18 }}>Update Loss Record</h3>
-              <button className="btn-icon" onClick={() => setNotesModal(null)}><FiX /></button>
+              <button className="btn-icon" onClick={() => setNotesModal(null)}><X size={16} strokeWidth={1.75} /></button>
             </div>
-            <div style={{ background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.3)',
-              borderRadius:10, padding:'12px 16px', marginBottom:16, fontSize:14 }}>
-              <strong>🚨 {notesModal.productName}</strong>
-              <p style={{ marginTop:4, color:'#fca5a5' }}>
+            <div style={{ background:'var(--err-bg)', border:'1px solid var(--err-bdr)',
+              borderRadius:'var(--r-md)', padding:'12px 16px', marginBottom:16, fontSize:14 }}>
+              <strong style={{ color:'var(--err)' }}><AlertTriangle size={14} strokeWidth={1.75} style={{ verticalAlign:'middle', marginRight:6 }} />{notesModal.productName}</strong>
+              <p style={{ marginTop:4, color:'var(--text-2)', fontSize:13 }}>
                 Unexplained Loss: {notesModal.unexplainedLoss ?? notesModal.missingQuantity} units |
                 Loss Value: ₹{Number(notesModal.lossValue).toLocaleString('en-IN')}
               </p>

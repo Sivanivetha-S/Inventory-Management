@@ -23,6 +23,10 @@ public class DamageRecord {
     @JoinColumn(name = "admin_id", nullable = false)
     private Admin admin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;

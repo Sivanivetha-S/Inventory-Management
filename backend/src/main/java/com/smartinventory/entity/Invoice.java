@@ -32,6 +32,17 @@ public class Invoice {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "staff_id")
+    private Staff staff;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
+    private String branchName;
+    private String branchCode;
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<InvoiceItem> items;
 
@@ -58,6 +69,11 @@ public class Invoice {
 
     private String notes;
 
+    private Long createdById;
+    private String createdByName;
+    private String createdByRole;
+    private String paymentMethod;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -75,6 +91,6 @@ public class Invoice {
     }
 
     public enum InvoiceStatus {
-        PAID, PENDING, CANCELLED
+        PAID, PENDING, CANCELLED, PARTIALLY_RETURNED, RETURNED, PARTIALLY_REFUNDED, FULLY_REFUNDED, EXCHANGED
     }
 }

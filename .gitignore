@@ -23,7 +23,8 @@ frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production
 frontend/.env.production.local
-# Allow .env.example — safe to commit (no real secrets)
+# Allow .env.example files — safe to commit (no real secrets)
+!.env.example
 !frontend/.env.example
 
 # ── Backend secrets ──

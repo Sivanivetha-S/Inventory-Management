@@ -4,12 +4,16 @@ import com.smartinventory.dto.request.DamageRequest;
 import com.smartinventory.dto.response.ApiResponse;
 import com.smartinventory.dto.response.DamageResponse;
 import com.smartinventory.entity.Admin;
+import com.smartinventory.entity.Branch;
+import com.smartinventory.entity.AuditLog;
 import com.smartinventory.entity.DamageRecord;
 import com.smartinventory.entity.Product;
 import com.smartinventory.exception.BadRequestException;
 import com.smartinventory.exception.ResourceNotFoundException;
 import com.smartinventory.repository.DamageRecordRepository;
 import com.smartinventory.repository.ProductRepository;
+import com.smartinventory.repository.BranchRepository;
+import com.smartinventory.repository.AuditLogRepository;
 import com.smartinventory.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,13 +31,21 @@ public class DamageService {
 
     private final DamageRecordRepository damageRecordRepository;
     private final ProductRepository productRepository;
+    private final BranchRepository branchRepository;
+    private final AuditLogRepository auditLogRepository;
     private final SecurityUtils securityUtils;
 
     @Transactional
     public ApiResponse<DamageResponse> recordDamage(DamageRequest request) {
         Admin admin = securityUtils.getCurrentAdmin();
+        Long branchId = securityUtils.getCurrentBranchId();
+        Branch branch = null;
+        if (branchId != null) {
+            branch = branchRepository.findByIdAndAdminId(branchId, admin.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Branch", branchId));
+        }
 
-        Product product = productRepository.findByIdAndAdminId(request.getProductId(), admin.getId())
+        Product product = productRepository.findByIdAndAdminIdAndBranchId(request.getProductId(), admin.getId(), branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
 
         if (product.getCurrentStock() < request.getQuantity()) {
@@ -55,6 +67,7 @@ public class DamageService {
 
         DamageRecord record = DamageRecord.builder()
                 .admin(admin)
+                .branch(branch)
                 .product(product)
                 .productName(product.getName())
                 .quantity(request.getQuantity())
@@ -69,6 +82,27 @@ public class DamageService {
         product.setCurrentStock(product.getCurrentStock() - request.getQuantity());
         productRepository.save(product);
 
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogRepository.save(AuditLog.builder()
+                .ownerId(admin.getId())
+                .branchId(branchId)
+                .productId(product.getId())
+                .action("DAMAGE")
+                .productName(product.getName())
+                .quantity(request.getQuantity())
+                .userEmail(email)
+                .build());
+
+        auditLogRepository.save(AuditLog.builder()
+                .ownerId(admin.getId())
+                .branchId(branchId)
+                .productId(product.getId())
+                .action("STOCK_REDUCED")
+                .productName(product.getName())
+                .quantity(request.getQuantity())
+                .userEmail(email)
+                .build());
+
         log.info("Damage recorded for product '{}': {} units ({})",
                 product.getName(), request.getQuantity(), reason);
 
@@ -80,32 +114,36 @@ public class DamageService {
 
     public ApiResponse<List<DamageResponse>> getAllDamageRecords() {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
         List<DamageResponse> records = damageRecordRepository
-                .findByAdminIdOrderByCreatedAtDesc(adminId)
+                .findByAdminIdAndBranchIdOrderByCreatedAtDesc(adminId, branchId)
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Damage records retrieved", records);
     }
 
     public ApiResponse<List<DamageResponse>> getDamageByDate(LocalDate date) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
         List<DamageResponse> records = damageRecordRepository
-                .findByAdminIdAndDamageDateOrderByCreatedAtDesc(adminId, date)
+                .findByAdminIdAndBranchIdAndDamageDateOrderByCreatedAtDesc(adminId, branchId, date)
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Damage records for " + date, records);
     }
 
     public ApiResponse<List<DamageResponse>> getDamageByDateRange(LocalDate from, LocalDate to) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
         List<DamageResponse> records = damageRecordRepository
-                .findByAdminIdAndDamageDateBetweenOrderByDamageDateDesc(adminId, from, to)
+                .findByAdminIdAndBranchIdAndDamageDateBetweenOrderByDamageDateDesc(adminId, branchId, from, to)
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Damage records retrieved", records);
     }
 
     public ApiResponse<List<DamageResponse>> getProductDamageHistory(Long productId) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
         List<DamageResponse> records = damageRecordRepository
-                .findByAdminIdAndProductIdOrderByCreatedAtDesc(adminId, productId)
+                .findByAdminIdAndBranchIdAndProductIdOrderByCreatedAtDesc(adminId, branchId, productId)
                 .stream().map(this::mapToResponse).collect(Collectors.toList());
         return ApiResponse.success("Product damage history", records);
     }

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authAPI } from '../../services/api'
 import toast from 'react-hot-toast'
-import { FiUser, FiMail, FiLock, FiPhone, FiShoppingBag, FiTag, FiEye, FiEyeOff } from 'react-icons/fi'
+import { User, Mail, Lock, Phone, ShoppingBag, Tag, Eye, EyeOff } from 'lucide-react'
 import './Auth.css'
 
 const STEPS = ['Basic Info', 'Verify OTP', 'Shop Details', 'Complete']
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                 <div className="form-group">
                   <label className="form-label">Full Name</label>
                   <div className="input-icon-wrap">
-                    <FiUser className="input-icon" />
+                    <User className="input-icon" size={15} strokeWidth={1.75} />
                     <input name="fullName" className={`form-input input-with-icon ${errors.fullName?'error':''}`}
                       placeholder="John Doe" value={form.fullName} onChange={change} />
                   </div>
@@ -164,7 +164,7 @@ export default function RegisterPage() {
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
                   <div className="input-icon-wrap">
-                    <FiPhone className="input-icon" />
+                    <Phone className="input-icon" size={15} strokeWidth={1.75} />
                     <input name="phoneNumber" className={`form-input input-with-icon ${errors.phoneNumber?'error':''}`}
                       placeholder="+91 9876543210" value={form.phoneNumber} onChange={change} />
                   </div>
@@ -174,7 +174,7 @@ export default function RegisterPage() {
               <div className="form-group">
                 <label className="form-label">Email Address</label>
                 <div className="input-icon-wrap">
-                  <FiMail className="input-icon" />
+                  <Mail className="input-icon" size={15} strokeWidth={1.75} />
                   <input type="email" name="email" className={`form-input input-with-icon ${errors.email?'error':''}`}
                     placeholder="admin@example.com" value={form.email} onChange={change} />
                 </div>
@@ -183,12 +183,12 @@ export default function RegisterPage() {
               <div className="form-group">
                 <label className="form-label">Password</label>
                 <div className="input-icon-wrap">
-                  <FiLock className="input-icon" />
+                  <Lock className="input-icon" size={15} strokeWidth={1.75} />
                   <input type={showPass?'text':'password'} name="password"
                     className={`form-input input-with-icon input-with-right-icon ${errors.password?'error':''}`}
                     placeholder="Minimum 8 characters" value={form.password} onChange={change} />
                   <button type="button" className="input-eye" onClick={() => setShowPass(!showPass)}>
-                    {showPass ? <FiEyeOff /> : <FiEye />}
+                  {showPass ? <EyeOff size={15} strokeWidth={1.75} /> : <Eye size={15} strokeWidth={1.75} />}
                   </button>
                 </div>
                 {errors.password && <p className="form-error">{errors.password}</p>}
@@ -242,7 +242,7 @@ export default function RegisterPage() {
               <div className="form-group">
                 <label className="form-label">Shop Name</label>
                 <div className="input-icon-wrap">
-                  <FiShoppingBag className="input-icon" />
+                  <ShoppingBag className="input-icon" size={15} strokeWidth={1.75} />
                   <input name="shopName" className={`form-input input-with-icon ${errors.shopName?'error':''}`}
                     placeholder="My Amazing Shop" value={form.shopName} onChange={change} />
                 </div>
@@ -251,7 +251,7 @@ export default function RegisterPage() {
               <div className="form-group">
                 <label className="form-label">Shop Category</label>
                 <div className="input-icon-wrap">
-                  <FiTag className="input-icon" />
+                  <Tag className="input-icon" size={15} strokeWidth={1.75} />
                   <select name="shopCategory" className={`form-input input-with-icon ${errors.shopCategory?'error':''}`}
                     value={form.shopCategory} onChange={change}>
                     <option value="">Select a category</option>

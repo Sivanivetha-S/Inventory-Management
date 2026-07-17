@@ -36,6 +36,8 @@ public class TheftDetectionService {
     private final DamageRecordRepository damageRecordRepository;
     private final EmailService emailService;
     private final SecurityUtils securityUtils;
+    private final BranchRepository branchRepository;
+    private final TheftRiskService theftRiskService;
 
     /**
      * Enhanced stock verification:
@@ -47,6 +49,19 @@ public class TheftDetectionService {
     @Transactional
     public ApiResponse<List<TheftRecordResponse>> verifyStock(StockVerificationRequest request) {
         Admin admin = securityUtils.getCurrentAdmin();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(admin.getId());
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        Branch activeBranch = null;
+        if (branchId != null) {
+            activeBranch = branchRepository.findByIdAndAdminId(branchId, admin.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
+        }
+
         LocalDate today = LocalDate.now();
         LocalDateTime dayStart = today.atStartOfDay();
         LocalDateTime dayEnd   = today.atTime(LocalTime.MAX);
@@ -54,8 +69,12 @@ public class TheftDetectionService {
         List<TheftRecord> records = new ArrayList<>();
 
         for (StockVerificationRequest.StockEntry entry : request.getEntries()) {
-            Product product = productRepository.findByIdAndAdminId(entry.getProductId(), admin.getId())
+            Product product = productRepository.findByIdAndAdminIdAndBranchId(entry.getProductId(), admin.getId(), branchId)
                     .orElseThrow(() -> new ResourceNotFoundException("Product", entry.getProductId()));
+
+            if (branchId != null && product.getBranch() != null && !product.getBranch().getId().equals(branchId)) {
+                throw new RuntimeException("Product " + product.getName() + " does not belong to the active branch.");
+            }
 
             Integer soldToday = invoiceItemRepository
                     .sumSoldQuantityByProductAndAdminAndDateRange(
@@ -64,7 +83,7 @@ public class TheftDetectionService {
 
             // Total damage recorded for this product today
             Integer damagedToday = damageRecordRepository
-                    .sumDamageByProductAndDate(admin.getId(), entry.getProductId(), today);
+                    .sumDamageByProductAndBranchAndDate(admin.getId(), branchId, entry.getProductId(), today);
             if (damagedToday == null) damagedToday = 0;
 
             int expectedStock  = product.getOpeningStock() - soldToday;
@@ -73,8 +92,8 @@ public class TheftDetectionService {
 
             // Only save a record if there is any difference (explained or unexplained)
             if (difference > 0 && !theftRecordRepository
-                    .existsByAdminIdAndProductIdAndDetectionDate(
-                            admin.getId(), entry.getProductId(), today)) {
+                    .existsByAdminIdAndBranchIdAndProductIdAndDetectionDate(
+                            admin.getId(), branchId, entry.getProductId(), today)) {
 
                 BigDecimal lossValue = product.getSellingPrice()
                         .multiply(BigDecimal.valueOf(unexplainedLoss));
@@ -85,6 +104,7 @@ public class TheftDetectionService {
 
                 TheftRecord record = TheftRecord.builder()
                         .admin(admin)
+                        .branch(activeBranch)
                         .product(product)
                         .productName(product.getName())
                         .openingStock(product.getOpeningStock())
@@ -100,7 +120,8 @@ public class TheftDetectionService {
                         .adminNotes(entry.getAdminNotes())
                         .build();
 
-                records.add(theftRecordRepository.save(record));
+                TheftRecord savedRecord = theftRecordRepository.save(record);
+                records.add(savedRecord);
 
                 // Send enhanced email only when unexplained loss > 0
                 if (unexplainedLoss > 0) {
@@ -108,6 +129,7 @@ public class TheftDetectionService {
                             admin.getEmail(), admin.getFullName(),
                             product.getName(), expectedStock, entry.getActualStock(),
                             damagedToday, unexplainedLoss, lossValue.doubleValue(), today);
+                    theftRiskService.evaluateAfterPossibleLoss(savedRecord);
                 }
             }
 
@@ -117,10 +139,18 @@ public class TheftDetectionService {
             productRepository.save(product);
         }
 
-        StockVerification verification = stockVerificationRepository
-                .findByAdminIdAndVerificationDate(admin.getId(), today)
-                .orElse(StockVerification.builder()
-                        .admin(admin).verificationDate(today).build());
+        StockVerification verification = null;
+        if (branchId != null) {
+            verification = stockVerificationRepository
+                    .findByAdminIdAndBranchIdAndVerificationDate(admin.getId(), branchId, today)
+                    .orElse(StockVerification.builder()
+                            .admin(admin).branch(activeBranch).verificationDate(today).build());
+        } else {
+            verification = stockVerificationRepository
+                    .findByAdminIdAndVerificationDate(admin.getId(), today)
+                    .orElse(StockVerification.builder()
+                            .admin(admin).verificationDate(today).build());
+        }
         verification.setStatus(StockVerification.VerificationStatus.COMPLETED);
         verification.setCompletedAt(LocalDateTime.now());
         stockVerificationRepository.save(verification);
@@ -143,6 +173,13 @@ public class TheftDetectionService {
             List<Long> productIds, List<Integer> actualStocks) {
 
         Admin admin = securityUtils.getCurrentAdmin();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(admin.getId());
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
         LocalDate today = LocalDate.now();
         LocalDateTime dayStart = today.atStartOfDay();
         LocalDateTime dayEnd   = today.atTime(LocalTime.MAX);
@@ -153,15 +190,19 @@ public class TheftDetectionService {
             Long productId = productIds.get(i);
             int actual     = actualStocks.get(i);
 
-            Product product = productRepository.findByIdAndAdminId(productId, admin.getId())
+            Product product = productRepository.findByIdAndAdminIdAndBranchId(productId, admin.getId(), branchId)
                     .orElseThrow(() -> new ResourceNotFoundException("Product", productId));
+
+            if (branchId != null && product.getBranch() != null && !product.getBranch().getId().equals(branchId)) {
+                throw new RuntimeException("Product " + product.getName() + " does not belong to the active branch.");
+            }
 
             Integer sold    = invoiceItemRepository.sumSoldQuantityByProductAndAdminAndDateRange(
                     productId, admin.getId(), dayStart, dayEnd);
             if (sold == null) sold = 0;
 
-            Integer damaged = damageRecordRepository.sumDamageByProductAndDate(
-                    admin.getId(), productId, today);
+            Integer damaged = damageRecordRepository.sumDamageByProductAndBranchAndDate(
+                    admin.getId(), branchId, productId, today);
             if (damaged == null) damaged = 0;
 
             int expected      = product.getOpeningStock() - sold;
@@ -192,32 +233,62 @@ public class TheftDetectionService {
 
     public ApiResponse<List<TheftRecordResponse>> getAllTheftRecords() {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        List<com.smartinventory.entity.TheftRecord> list = theftRecordRepository.findAllByAdminIdAndBranchIdOrderByCreatedAtDesc(adminId, branchId);
         return ApiResponse.success("Loss records retrieved",
-                theftRecordRepository.findAllByAdminIdOrderByCreatedAtDesc(adminId)
-                        .stream().map(this::mapToResponse).collect(Collectors.toList()));
+                list.stream().map(this::mapToResponse).collect(Collectors.toList()));
     }
 
     public ApiResponse<List<TheftRecordResponse>> getTheftRecordsByDate(LocalDate date) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        List<TheftRecord> list = theftRecordRepository.findByAdminIdAndBranchIdAndDetectionDateOrderByCreatedAtDesc(adminId, branchId, date);
         return ApiResponse.success("Loss records for " + date,
-                theftRecordRepository.findByAdminIdAndDetectionDateOrderByCreatedAtDesc(adminId, date)
-                        .stream().map(this::mapToResponse).collect(Collectors.toList()));
+                list.stream().map(this::mapToResponse).collect(Collectors.toList()));
     }
 
     public ApiResponse<List<TheftRecordResponse>> getTheftRecordsByDateRange(LocalDate from, LocalDate to) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        List<TheftRecord> list = theftRecordRepository.findByAdminIdAndBranchIdAndDetectionDateBetweenOrderByDetectionDateDesc(adminId, branchId, from, to);
         return ApiResponse.success("Loss records retrieved",
-                theftRecordRepository
-                        .findByAdminIdAndDetectionDateBetweenOrderByDetectionDateDesc(adminId, from, to)
-                        .stream().map(this::mapToResponse).collect(Collectors.toList()));
+                list.stream().map(this::mapToResponse).collect(Collectors.toList()));
     }
 
     @Transactional
     public ApiResponse<TheftRecordResponse> updateTheftNotes(Long id, TheftRecordNotesRequest request) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
         TheftRecord record = theftRecordRepository.findById(id)
                 .filter(r -> r.getAdmin().getId().equals(adminId))
                 .orElseThrow(() -> new ResourceNotFoundException("Loss record", id));
+        if (branchId != null && record.getBranch() != null && !record.getBranch().getId().equals(branchId)) {
+            throw new RuntimeException("Access denied: Loss record belongs to another branch.");
+        }
         record.setAdminNotes(request.getAdminNotes());
         if (request.getStatus() != null) {
             record.setStatus(TheftRecord.TheftStatus.valueOf(request.getStatus()));
@@ -227,9 +298,16 @@ public class TheftDetectionService {
 
     public ApiResponse<List<TheftRecordResponse>> getProductTheftHistory(Long productId) {
         Long adminId = securityUtils.getCurrentAdminId();
+        Long branchId = securityUtils.getCurrentBranchId();
+        if (branchId == null) {
+            List<Branch> branches = branchRepository.findAllByAdminId(adminId);
+            if (!branches.isEmpty()) {
+                throw new RuntimeException("Branch selection is required");
+            }
+        }
+        List<TheftRecord> list = theftRecordRepository.findByAdminIdAndBranchIdAndProductId(adminId, branchId, productId);
         return ApiResponse.success("Product loss history",
-                theftRecordRepository.findByAdminIdAndProductId(adminId, productId)
-                        .stream().map(this::mapToResponse).collect(Collectors.toList()));
+                list.stream().map(this::mapToResponse).collect(Collectors.toList()));
     }
 
     public void sendDailyReminder() {

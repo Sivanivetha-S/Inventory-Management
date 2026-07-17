@@ -1,48 +1,90 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { authAPI } from '../services/api'
 
 const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
-  const [admin, setAdmin]       = useState(null)
-  const [loading, setLoading]   = useState(true)
-  const [token, setToken]       = useState(null)
+  const [user,    setUser]    = useState(null)
+  const [role,    setRole]    = useState(null)
+  const [token,   setToken]   = useState(null)
+  const [loading, setLoading] = useState(true)
 
+  // Restore session from sessionStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('token')
-    const storedAdmin = localStorage.getItem('admin')
-    if (storedToken && storedAdmin) {
-      setToken(storedToken)
-      setAdmin(JSON.parse(storedAdmin))
-    }
+    try {
+      const t = sessionStorage.getItem('si_token')
+      const u = sessionStorage.getItem('si_user')
+      const r = sessionStorage.getItem('si_role')
+      if (t && u && r) {
+        setToken(t)
+        setUser(JSON.parse(u))
+        setRole(r)
+      }
+    } catch (_) { /* ignore corrupt data */ }
     setLoading(false)
   }, [])
 
-  const login = useCallback((tokenValue, adminData) => {
-    localStorage.setItem('token', tokenValue)
-    localStorage.setItem('admin', JSON.stringify(adminData))
+  /**
+   * Called immediately after a successful login API call.
+   * Stores token + user metadata in sessionStorage so:
+   *   1. axios interceptor can read 'si_token' and attach Authorization header
+   *   2. page refresh restores the session
+   */
+  const login = useCallback((tokenValue, userData, userRole) => {
+    sessionStorage.setItem('si_token', tokenValue)
+    sessionStorage.setItem('si_user',  JSON.stringify(userData))
+    sessionStorage.setItem('si_role',  userRole)
     setToken(tokenValue)
-    setAdmin(adminData)
+    setUser(userData)
+    setRole(userRole)
   }, [])
 
-  const logout = useCallback(() => {
+  /**
+   * Logout — clear sessionStorage + call server to clear HttpOnly cookie too.
+   * Server call is best-effort; we always clear local state.
+   */
+  const logout = useCallback(async () => {
+    // Clear local state first so UI reacts immediately
+    sessionStorage.removeItem('si_token')
+    sessionStorage.removeItem('si_user')
+    sessionStorage.removeItem('si_role')
+    // Clear any legacy keys
     localStorage.removeItem('token')
     localStorage.removeItem('admin')
     setToken(null)
-    setAdmin(null)
+    setUser(null)
+    setRole(null)
+
+    // Best-effort: tell server to clear cookie
+    try {
+      const endpoint = role === 'STAFF' ? '/staff/logout' :
+                       role === 'SUPPLIER' ? '/suppliers/logout' :
+                       '/auth/logout'
+      await fetch(`/api${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch (_) { /* ignore */ }
+  }, [role])
+
+  const [activeBranchId, setActiveBranchId] = useState(() => localStorage.getItem('si_active_branch_id') || 'all')
+
+  const switchBranch = useCallback((branchId) => {
+    localStorage.setItem('si_active_branch_id', branchId)
+    setActiveBranchId(branchId)
   }, [])
 
-  const refreshProfile = useCallback(async () => {
-    try {
-      const res = await authAPI.getProfile()
-      const updated = res.data.data
-      setAdmin(updated)
-      localStorage.setItem('admin', JSON.stringify(updated))
-    } catch { /* ignore */ }
-  }, [])
+  // Backward-compat alias
+  const admin = role === 'ADMIN' ? user : null
 
   return (
-    <AuthContext.Provider value={{ admin, token, loading, login, logout, refreshProfile, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{
+      user, role, admin, token, loading,
+      login, logout, activeBranchId, switchBranch,
+      isAuthenticated: !!token,
+      isAdmin:    role === 'ADMIN',
+      isStaff:    role === 'STAFF',
+      isSupplier: role === 'SUPPLIER',
+    }}>
       {children}
     </AuthContext.Provider>
   )

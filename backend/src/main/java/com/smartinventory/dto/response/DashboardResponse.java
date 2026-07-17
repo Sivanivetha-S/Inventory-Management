@@ -21,7 +21,9 @@ public class DashboardResponse {
     private List<ProductResponse> lowStockProducts;
     private List<InvoiceResponse> recentBills;
     private List<TheftRecordResponse> recentTheftAlerts;
+    private List<HighRiskProductResponse> highRiskProducts;
     private Map<String, BigDecimal> weeklySales;
     private Map<String, BigDecimal> monthlySales;
     private Map<String, Long> salesByCategory;
+    private List<StaffStatsResponse> staffStats;
 }

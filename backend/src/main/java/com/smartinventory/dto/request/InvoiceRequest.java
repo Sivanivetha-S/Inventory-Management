@@ -20,6 +20,8 @@ public class InvoiceRequest {
 
     private String notes;
 
+    private String paymentMethod;
+
     @Data
     public static class InvoiceItemRequest {
 

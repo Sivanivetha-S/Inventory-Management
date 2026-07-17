@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { invoiceAPI } from '../services/api'
 import toast from 'react-hot-toast'
-import { FiSearch, FiX, FiDownload, FiCalendar, FiFilter } from 'react-icons/fi'
+import { Search, X, Download, Calendar, Filter, FileText, DollarSign, Tag, BarChart3 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import './Sales.css'
 
 const today = () => new Date().toISOString().split('T')[0]
 const monthStart = () => {
@@ -10,6 +12,7 @@ const monthStart = () => {
 }
 
 export default function Sales() {
+  const { activeBranchId } = useAuth()
   const [invoices, setInvoices]   = useState([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
@@ -20,12 +23,14 @@ export default function Sales() {
   const [totalDiscount, setTotalDiscount] = useState(0)
 
   const load = useCallback(() => {
+    setInvoices([])
+    setFiltered([])
     setLoading(true)
     invoiceAPI.getAll()
       .then(r => { setInvoices(r.data.data); applyFilter(r.data.data, fromDate, toDate, search) })
       .catch(() => toast.error('Failed to load sales'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeBranchId])
 
   useEffect(() => { load() }, [load])
 
@@ -75,57 +80,49 @@ export default function Sales() {
   return (
     <div className="animate-fade-in">
       {/* Summary cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:16, marginBottom:24 }}>
+      <div className="sales-stats-grid">
         {[
-          { label:'Total Invoices',  value: filtered.length,                            icon:'📋', bg:'#FFA384' },
-          { label:'Total Revenue',   value:`₹${totalRevenue.toLocaleString('en-IN')}`,  icon:'💰', bg:'#7A3C3A' },
-          { label:'Total Discounts', value:`₹${totalDiscount.toLocaleString('en-IN')}`, icon:'🏷️', bg:'#c8603a' },
-          { label:'Avg Order Value', value: filtered.length ? `₹${(totalRevenue/filtered.length).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '₹0', icon:'📊', bg:'#4a7a9a' },
+          { label:'Total Invoices',  value: filtered.length,                            icon: FileText,   cls:'indigo' },
+          { label:'Total Revenue',   value:`₹${totalRevenue.toLocaleString('en-IN')}`,  icon: DollarSign, cls:'slate' },
+          { label:'Total Discounts', value:`₹${totalDiscount.toLocaleString('en-IN')}`, icon: Tag,        cls:'amber' },
+          { label:'Avg Order Value', value: filtered.length ? `₹${(totalRevenue/filtered.length).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '₹0', icon: BarChart3, cls:'blue' },
         ].map(s => (
-          <div key={s.label} style={{
-            background: s.bg, borderRadius:'var(--r-lg)',
-            padding:'22px 20px', boxShadow:'0 4px 16px rgba(122,60,58,.18)',
-            display:'flex', alignItems:'center', gap:16,
-            position:'relative', overflow:'hidden',
-            transition:'transform .2s ease, box-shadow .2s ease',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 8px 24px rgba(122,60,58,.28)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)';   e.currentTarget.style.boxShadow='0 4px 16px rgba(122,60,58,.18)'; }}
-          >
-            <div style={{ position:'absolute', bottom:-16, right:-16, width:72, height:72, borderRadius:'50%', background:'rgba(255,255,255,.12)', pointerEvents:'none' }} />
-            <div style={{ width:46, height:46, flexShrink:0, borderRadius:12, background:'rgba(255,255,255,.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{s.icon}</div>
-            <div>
-              <p style={{ fontSize:11, color:'rgba(255,255,255,.78)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px', marginBottom:4 }}>{s.label}</p>
-              <h3 style={{ fontSize:22, fontWeight:900, color:'#fff', lineHeight:1 }}>{s.value}</h3>
+          <div key={s.label} className="sales-stat-card">
+            <div className={`sales-stat-card__icon sales-stat-card__icon--${s.cls}`}>
+              <s.icon size={20} strokeWidth={1.75} />
+            </div>
+            <div className="sales-stat-card__body">
+              <p className="sales-stat-card__label">{s.label}</p>
+              <h3 className="sales-stat-card__value">{s.value}</h3>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="card" style={{ marginBottom:20 }}>
-        <div style={{ display:'flex', gap:16, flexWrap:'wrap', alignItems:'flex-end' }}>
+      <div className="sales-filter-bar">
+        <div className="sales-filter-bar-inner">
           <div>
-            <label className="form-label"><FiCalendar style={{ marginRight:4 }} />From Date</label>
+            <label className="form-label"><Calendar size={13} strokeWidth={1.75} style={{ marginRight:4, verticalAlign:'middle' }} />From Date</label>
             <input type="date" className="form-input" style={{ width:160 }} value={fromDate} onChange={e => setFromDate(e.target.value)} />
           </div>
           <div>
-            <label className="form-label"><FiCalendar style={{ marginRight:4 }} />To Date</label>
+            <label className="form-label"><Calendar size={13} strokeWidth={1.75} style={{ marginRight:4, verticalAlign:'middle' }} />To Date</label>
             <input type="date" className="form-input" style={{ width:160 }} value={toDate} onChange={e => setToDate(e.target.value)} />
           </div>
           <div style={{ flex:1, minWidth:220 }}>
-            <label className="form-label"><FiSearch style={{ marginRight:4 }} />Search</label>
+            <label className="form-label"><Search size={13} strokeWidth={1.75} style={{ marginRight:4, verticalAlign:'middle' }} />Search</label>
             <div className="search-bar">
-              <FiSearch style={{ color:'var(--gray)' }} />
+              <Search size={15} />
               <input placeholder="Invoice # or customer name..." value={search} onChange={e => setSearch(e.target.value)} />
-              {search && <button onClick={() => setSearch('')} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--gray)' }}><FiX /></button>}
+              {search && <button onClick={() => setSearch('')} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text-3)' }}><X size={14} /></button>}
             </div>
           </div>
           <button className="btn btn-secondary" onClick={() => { setSearch(''); setFromDate(monthStart()); setToDate(today()) }}>
-            <FiFilter /> Reset
+            <Filter size={14} /> Reset
           </button>
           <button className="btn btn-primary" onClick={exportCSV} disabled={filtered.length === 0}>
-            <FiDownload /> Export CSV
+            <Download size={14} /> Export CSV
           </button>
         </div>
       </div>
