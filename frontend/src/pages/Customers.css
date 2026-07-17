@@ -1,0 +1,72 @@
+/*
+  CUSTOMERS PAGE — visibility fixes
+  All table cell text and banner text must be readable
+  on white and light-stripe row backgrounds
+*/
+
+/* ── Force table cell text to always be dark & readable ── */
+.table-container tbody td {
+  color: #3a2020 !important;
+  font-size: 13.5px;
+}
+.table-container tbody td strong {
+  color: var(--burg) !important;
+  font-weight: 700 !important;
+}
+
+/* email / phone / address flex spans — make icon + text both visible */
+.table-container tbody td span[style*="display:'flex'"],
+.table-container tbody td span[style*="display: flex"],
+.table-container tbody td span[style*="alignItems"] {
+  color: #3a2020 !important;
+}
+.table-container tbody td span[style*="alignItems"] svg {
+  color: var(--burg-lt) !important;
+  flex-shrink: 0;
+}
+
+/* dash placeholder spans (color:#9ca3af) */
+.table-container tbody td span[style*="#9ca3af"] {
+  color: #9a7070 !important;
+}
+
+/* even-row override — ensure text stays dark regardless of stripe */
+.table-container tbody tr:nth-child(even) td {
+  color: #3a2020 !important;
+}
+
+/* ── OTP warning banner ── */
+/* background:#fefce8, border:#fbbf24 */
+[style*="background:#fefce8"] {
+  background: #fffbeb !important;
+  border-color: #d97706 !important;
+}
+[style*="background:#fefce8"] span[style*="color:#92400e"],
+[style*="background:#fefce8"] span { color: #7a3a00 !important; }
+[style*="background:#fefce8"] strong { color: #5a2800 !important; }
+
+/* ── Add Customer info banner (blue) ── */
+/* background:#f0f9ff, border:#bae6fd */
+[style*="background:#f0f9ff"] {
+  background: #e8f4fb !important;
+  border-color: #60a5c4 !important;
+}
+[style*="background:#f0f9ff"],
+[style*="background:#f0f9ff"] span,
+[style*="background:#f0f9ff"] strong { color: #1a4a6a !important; }
+
+/* ── Page subtitle (1 total · 0 verified · 0 pending) ── */
+.page-subtitle { color: #7a3c3a !important; font-weight: 500 !important; }
+
+/* verified count — green */
+.page-subtitle span[style*="color:'#22c55e'"],
+.page-subtitle span[style*="color:#22c55e"] { color: #1a7a48 !important; font-weight: 600 !important; }
+
+/* pending count — amber */
+.page-subtitle span[style*="color:'#f59e0b'"],
+.page-subtitle span[style*="color:#f59e0b"] { color: #b87020 !important; font-weight: 600 !important; }
+
+/* ── Verified / Pending badges ── */
+.badge-success { background: #2e7d5a !important; color: #fff !important; }
+.badge-warning { background: #b87020 !important; color: #fff !important; }
+.badge-gray    { background: var(--sage-dk) !important; color: var(--burg) !important; font-weight: 600 !important; }

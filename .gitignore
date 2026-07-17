@@ -1,0 +1,66 @@
+# ── Dependencies ──
+node_modules/
+/.pnp
+.pnp.js
+
+# ── Build outputs ──
+/build
+/dist
+frontend/dist/
+
+# ── Environment / secrets — NEVER commit these ──
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production
+frontend/.env.production.local
+# Allow .env.example — safe to commit (no real secrets)
+!frontend/.env.example
+
+# ── Backend secrets ──
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-prod.properties
+
+# ── Java / Maven ──
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+.mvn/
+mvnw
+mvnw.cmd
+
+# ── IDE files ──
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── Logs ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# ── Testing ──
+/coverage
